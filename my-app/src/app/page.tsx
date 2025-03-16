@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useUser, SignInButton } from '@clerk/nextjs';
 
 export default function Home() {
@@ -10,14 +9,10 @@ export default function Home() {
     return (
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
         <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-          <Image
-            className="dark:invert"
-            src="/sparksstack.svg"
-            alt="SparksStack logo"
-            width={180}
-            height={38}
-            priority
-          />
+          <h1 className="text-4xl font-bold">
+            <span className="text-orange-500">Sparks</span>
+            <span>Stack</span>
+          </h1>
           
           <div className="flex gap-4 items-center flex-col sm:flex-row">
             <SignInButton mode="modal">
@@ -34,15 +29,11 @@ export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/sparksstack.svg"
-          alt="SparksStack logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <h1 className="text-2xl font-bold">Welcome, {user?.firstName || 'User'}!</h1>
+        <h1 className="text-4xl font-bold">
+          <span className="text-orange-500">Sparks</span>
+          <span>Stack</span>
+        </h1>
+        <h2 className="text-2xl font-bold">Welcome, {user?.firstName || 'User'}!</h2>
         <p className="text-lg">You are successfully signed in.</p>
         
         <p className="text-md text-muted-foreground">
