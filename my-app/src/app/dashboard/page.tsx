@@ -2,11 +2,12 @@
 
 import { useUser } from '@clerk/nextjs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ArrowUpIcon, ArrowDownIcon, StarIcon, MessageCircleIcon, MapPin, MessageSquareIcon, ThumbsUpIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, StarIcon, MessageCircleIcon, MapPin, MessageSquareIcon, ThumbsUpIcon, ChevronDown } from 'lucide-react';
 import { useLocationStore } from '@/lib/store/location-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState, useEffect } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useState, useEffect, useRef } from 'react';
 
 // Sample review trends data by month
 const reviewTrendsData = {
@@ -219,6 +220,9 @@ export default function Dashboard() {
   const { user } = useUser();
   const { locations, activeLocationId, setActiveLocation } = useLocationStore();
   const [filteredReviews, setFilteredReviews] = useState(sampleReviews);
+  const [activeTab, setActiveTab] = useState("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Get active location or null for "All Locations"
   const activeLocation = activeLocationId 
@@ -252,6 +256,26 @@ export default function Dashboard() {
           : reviewTrendsData.fortworth
     : reviewTrendsData.all;
   
+  // Handle clicks outside of dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle location selection
+  const handleLocationChange = (id: string | null) => {
+    setActiveLocation(id);
+    setDropdownOpen(false);
+  };
+  
   // Filter reviews based on active location
   useEffect(() => {
     if (!activeLocationId) {
@@ -266,18 +290,89 @@ export default function Dashboard() {
     }
   }, [activeLocationId]);
   
+  // Get filtered reviews based on the active tab
+  const getTabReviews = () => {
+    switch (activeTab) {
+      case "negative":
+        return filteredReviews.filter(review => review.rating <= 3);
+      case "unreplied":
+        return filteredReviews.filter(review => !review.replied);
+      case "all":
+      default:
+        return filteredReviews;
+    }
+  };
+  
+  const tabReviews = getTabReviews();
+  
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Review Management Dashboard {user && `- Welcome, ${user.firstName || 'User'}`}
-        </h1>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Review Management Dashboard {user && `- Welcome, ${user.firstName || 'User'}`}
+          </h1>
+          
+          <p className="text-gray-600 mt-1">
+            {activeLocation 
+              ? `Managing reviews for ${activeLocation.name}`
+              : "Managing reviews for all locations"}
+          </p>
+        </div>
         
-        <p className="text-gray-600 mt-1">
-          {activeLocation 
-            ? `Managing reviews for ${activeLocation.name}`
-            : "Managing reviews for all locations"}
-        </p>
+        {/* Location Switcher */}
+        <div className="relative mt-4 md:mt-0" ref={dropdownRef}>
+          <button 
+            className="flex items-center p-2 border rounded-md bg-white shadow-sm hover:bg-gray-50 transition-colors"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <div className="flex items-center">
+              <MapPin size={16} className="mr-1 text-blue-500" />
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium">{activeLocation ? activeLocation.name : "All Locations"}</span>
+                {activeLocation && (
+                  <span className="text-xs text-gray-500 truncate max-w-[240px]">
+                    {activeLocation.address}
+                  </span>
+                )}
+              </div>
+              <ChevronDown size={16} className="ml-1" />
+            </div>
+          </button>
+          
+          {/* Dropdown */}
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-1 w-80 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
+              {/* All Locations option */}
+              <button
+                className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
+                onClick={() => handleLocationChange(null)}
+              >
+                <div className="flex items-center">
+                  <MapPin size={16} className="mr-2 text-blue-500" />
+                  <span className="font-medium">All Locations</span>
+                </div>
+              </button>
+              
+              {/* Individual locations */}
+              {locations.map(location => (
+                <button
+                  key={location.id}
+                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
+                  onClick={() => handleLocationChange(location.id)}
+                >
+                  <div className="flex">
+                    <MapPin size={16} className="mr-2 text-blue-500 flex-shrink-0 mt-1" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{location.name}</span>
+                      <span className="text-xs text-gray-500 truncate">{location.address}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Review Metrics */}
@@ -396,60 +491,35 @@ export default function Dashboard() {
         </Card>
       </div>
       
-      {/* Recent Reviews */}
+      {/* Reviews with Tabs */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Recent Reviews</CardTitle>
-            <CardDescription>Latest customer feedback from Google Business Profile</CardDescription>
+            <CardTitle>Customer Reviews</CardTitle>
+            <CardDescription>Latest feedback from Google Business Profile</CardDescription>
           </div>
           <Button>Manage All Reviews</Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {filteredReviews.length > 0 ? (
-              filteredReviews.map((review) => (
-                <div key={review.id} className="border-b border-gray-200 dark:border-gray-800 pb-6 last:border-b-0 last:pb-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-medium">{review.author}</div>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <svg 
-                            key={i}
-                            xmlns="http://www.w3.org/2000/svg" 
-                            width="16" 
-                            height="16" 
-                            viewBox="0 0 24 24" 
-                            fill={i < review.rating ? "currentColor" : "none"}
-                            stroke="currentColor" 
-                            strokeWidth="2" 
-                            className={i < review.rating ? "text-yellow-500" : "text-gray-300"}
-                          >
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                          </svg>
-                        ))}
-                        <span className="ml-2 text-sm text-muted-foreground">{review.date}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <Button variant={review.replied ? "outline" : "default"} size="sm">
-                        {review.replied ? "View Reply" : "Reply"}
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-sm">{review.content}</p>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No reviews available for this location.</p>
-              </div>
-            )}
-          </div>
-          {filteredReviews.length > 0 && (
-            <Button className="mt-6 w-full" variant="outline">Load More Reviews</Button>
-          )}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-3 mb-6">
+              <TabsTrigger value="all">All Reviews ({filteredReviews.length})</TabsTrigger>
+              <TabsTrigger value="negative">Negative Reviews ({filteredReviews.filter(r => r.rating <= 3).length})</TabsTrigger>
+              <TabsTrigger value="unreplied">Unreplied ({filteredReviews.filter(r => !r.replied).length})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="space-y-4">
+              {renderReviews(tabReviews)}
+            </TabsContent>
+            
+            <TabsContent value="negative" className="space-y-4">
+              {renderReviews(tabReviews)}
+            </TabsContent>
+            
+            <TabsContent value="unreplied" className="space-y-4">
+              {renderReviews(tabReviews)}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
       
@@ -512,6 +582,60 @@ export default function Dashboard() {
             })}
           </div>
         </div>
+      )}
+    </>
+  );
+}
+
+// Helper function to render reviews
+function renderReviews(reviews: typeof sampleReviews) {
+  if (reviews.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No reviews available for this filter.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <>
+      <div className="space-y-6">
+        {reviews.map((review) => (
+          <div key={review.id} className="border-b border-gray-200 dark:border-gray-800 pb-6 last:border-b-0 last:pb-0">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <div className="font-medium">{review.author}</div>
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <svg 
+                      key={i}
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill={i < review.rating ? "currentColor" : "none"}
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      className={i < review.rating ? "text-yellow-500" : "text-gray-300"}
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  ))}
+                  <span className="ml-2 text-sm text-muted-foreground">{review.date}</span>
+                </div>
+              </div>
+              <div>
+                <Button variant={review.replied ? "outline" : "default"} size="sm">
+                  {review.replied ? "View Reply" : "Reply"}
+                </Button>
+              </div>
+            </div>
+            <p className="text-sm">{review.content}</p>
+          </div>
+        ))}
+      </div>
+      {reviews.length > 0 && (
+        <Button className="mt-6 w-full" variant="outline">Load More Reviews</Button>
       )}
     </>
   );

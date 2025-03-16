@@ -7,7 +7,6 @@ import {
   Home, 
   Map, 
   BarChart3, 
-  MessageSquare, 
   Settings, 
   ChevronLeft, 
   ChevronRight 
@@ -17,7 +16,6 @@ const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Locations', href: '/dashboard/locations', icon: Map },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'Reviews', href: '/dashboard/reviews', icon: MessageSquare },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
