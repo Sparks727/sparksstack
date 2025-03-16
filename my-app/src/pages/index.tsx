@@ -1,17 +1,7 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+// This file is intentionally not handling any routes
+// It exists only to support the _app.tsx structure
+// while avoiding conflicts with the App Router
 
-export default function LegacyIndex() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    // Redirect to the App Router home page
-    router.push('/');
-  }, [router]);
-  
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-lg">Redirecting...</p>
-    </div>
-  );
+export default function NoOp() {
+  return null;
 } 
