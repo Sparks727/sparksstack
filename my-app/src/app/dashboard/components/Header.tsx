@@ -1,7 +1,7 @@
 "use client";
 
 import { UserButton, useUser } from '@clerk/nextjs';
-import { Menu, Bell, ChevronDown } from 'lucide-react';
+import { Menu, Bell, ChevronDown, MapPin } from 'lucide-react';
 import { useLocationStore } from '@/lib/store/location-store';
 import { useState, useEffect, useRef } from 'react';
 
@@ -57,29 +57,48 @@ export default function Header({ toggleMobileSidebar }: HeaderProps) {
             className="flex items-center space-x-1 text-gray-700 hover:text-gray-900 text-sm font-medium"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <span>{activeLocation ? activeLocation.name : "All Locations"}</span>
-            <ChevronDown size={16} />
+            <div className="flex items-center">
+              <MapPin size={16} className="mr-1 text-blue-500" />
+              <div className="flex flex-col items-start">
+                <span>{activeLocation ? activeLocation.name : "All Locations"}</span>
+                {activeLocation && (
+                  <span className="text-xs text-gray-500 truncate max-w-[240px]">
+                    {activeLocation.address}
+                  </span>
+                )}
+              </div>
+              <ChevronDown size={16} className="ml-1" />
+            </div>
           </button>
           
           {/* Dropdown */}
           {dropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-56 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
+            <div className="absolute top-full left-0 mt-1 w-80 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
               {/* All Locations option */}
               <button
-                className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
+                className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
                 onClick={() => handleLocationChange(null)}
               >
-                All Locations
+                <div className="flex items-center">
+                  <MapPin size={16} className="mr-2 text-blue-500" />
+                  <span className="font-medium">All Locations</span>
+                </div>
               </button>
               
               {/* Individual locations */}
               {locations.map(location => (
                 <button
                   key={location.id}
-                  className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
+                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
                   onClick={() => handleLocationChange(location.id)}
                 >
-                  {location.name}
+                  <div className="flex">
+                    <MapPin size={16} className="mr-2 text-blue-500 flex-shrink-0 mt-1" />
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{location.name}</span>
+                      <span className="text-xs text-gray-500 truncate">{location.address}</span>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
