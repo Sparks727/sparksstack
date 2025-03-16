@@ -16,7 +16,8 @@ interface LocationState {
   addLocation: (location: Omit<Location, 'id'>) => void;
   removeLocation: (id: string) => void;
   updateLocation: (id: string, updates: Partial<Omit<Location, 'id'>>) => void;
-  setActiveLocation: (id: string) => void;
+  setActiveLocation: (id: string | null) => void;
+  setAllLocations: () => void;
 }
 
 // Initial sample data
@@ -43,7 +44,7 @@ export const useLocationStore = create<LocationState>()(
   persist(
     (set) => ({
       locations: initialLocations,
-      activeLocationId: '1', // Default to first location
+      activeLocationId: null, // Default to "All Locations"
       
       addLocation: (locationData) => set((state) => ({
         locations: [
@@ -58,9 +59,7 @@ export const useLocationStore = create<LocationState>()(
       removeLocation: (id) => set((state) => ({
         locations: state.locations.filter(location => location.id !== id),
         // Reset active location if we're removing the active one
-        activeLocationId: state.activeLocationId === id 
-          ? (state.locations.length > 1 ? state.locations[0].id : null) 
-          : state.activeLocationId
+        activeLocationId: state.activeLocationId === id ? null : state.activeLocationId
       })),
       
       updateLocation: (id, updates) => set((state) => ({
@@ -73,6 +72,10 @@ export const useLocationStore = create<LocationState>()(
       
       setActiveLocation: (id) => set(() => ({
         activeLocationId: id
+      })),
+      
+      setAllLocations: () => set(() => ({
+        activeLocationId: null
       }))
     }),
     {
