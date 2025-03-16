@@ -23,7 +23,7 @@ export default function Home() {
         <main className="flex flex-col gap-[32px] row-start-2 items-center">
           <Image
             src="/SparksStackLogo.png"
-            alt="Blue Sky Roofing Logo"
+            alt="SparksStack Logo"
             width={250}
             height={80}
             priority
