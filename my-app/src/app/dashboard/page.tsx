@@ -141,6 +141,7 @@ const sampleReviews = [
     date: "2023-07-15",
     content: "Excellent service! The team was very professional and attentive to my needs. Would definitely recommend to others.",
     replied: true,
+    reply: "Thank you for your kind words, John! We're glad you had a great experience with our team.",
     location: "main"
   },
   {
@@ -150,6 +151,7 @@ const sampleReviews = [
     date: "2023-07-10",
     content: "Great experience overall. The only reason I'm not giving 5 stars is because the response time could be a bit faster.",
     replied: false,
+    reply: "",
     location: "arlington"
   },
   {
@@ -159,6 +161,7 @@ const sampleReviews = [
     date: "2023-07-05",
     content: "Top-notch service and quality. I've been a customer for years and have never been disappointed.",
     replied: true,
+    reply: "We appreciate your continued support, Bob! It's loyal customers like you that keep us motivated to deliver excellence.",
     location: "dallas"
   },
   {
@@ -168,6 +171,7 @@ const sampleReviews = [
     date: "2023-06-28",
     content: "Decent service, but there's definitely room for improvement in terms of communication.",
     replied: false,
+    reply: "",
     location: "fortworth"
   },
   {
@@ -177,8 +181,79 @@ const sampleReviews = [
     date: "2023-06-20",
     content: "Absolutely fantastic! The attention to detail was impressive.",
     replied: true,
+    reply: "Thank you, Michael! We pride ourselves on our attention to detail and we're glad it showed in your experience.",
     location: "main"
   },
+  {
+    id: 6,
+    author: "Sarah Thompson",
+    rating: 4,
+    date: "2023-06-15",
+    content: "Very satisfied with the service. The team was knowledgeable and fixed our roof issues quickly.",
+    replied: true,
+    reply: "Thank you for your feedback, Sarah! We're happy to hear our team resolved your roofing issues efficiently.",
+    location: "arlington"
+  },
+  {
+    id: 7,
+    author: "David Clark",
+    rating: 2,
+    date: "2023-06-10",
+    content: "The quality of work was okay, but I had issues with scheduling and had to reschedule twice.",
+    replied: true,
+    reply: "We apologize for the scheduling issues, David. We've since improved our scheduling system to prevent such inconveniences in the future.",
+    location: "dallas"
+  },
+  {
+    id: 8,
+    author: "Emily Roberts",
+    rating: 5,
+    date: "2023-06-05",
+    content: "Excellent customer service! They went above and beyond to explain the roofing process and answer all my questions.",
+    replied: false,
+    reply: "",
+    location: "fortworth"
+  },
+  {
+    id: 9,
+    author: "Kevin Martinez",
+    rating: 3,
+    date: "2023-05-30",
+    content: "The roof looks good, but there was some miscommunication about the timeline.",
+    replied: false,
+    reply: "",
+    location: "main"
+  },
+  {
+    id: 10,
+    author: "Laura Wilson",
+    rating: 5,
+    date: "2023-05-25",
+    content: "Couldn't be happier with my new roof! Fair pricing and excellent workmanship.",
+    replied: true,
+    reply: "Thank you Laura! We're glad you're happy with your new roof and appreciated our fair pricing.",
+    location: "arlington"
+  },
+  {
+    id: 11,
+    author: "Mark Johnson",
+    rating: 4,
+    date: "2023-05-20",
+    content: "Professional team that delivered quality work. Only giving 4 stars because of a slight delay in starting the project.",
+    replied: false,
+    reply: "",
+    location: "dallas"
+  },
+  {
+    id: 12,
+    author: "Jennifer Adams",
+    rating: 5,
+    date: "2023-05-15",
+    content: "Blue Sky Roofing did an amazing job on our commercial building. Highly recommend their services!",
+    replied: true,
+    reply: "Thank you for the recommendation, Jennifer! We're proud to have met your commercial roofing needs.",
+    location: "fortworth"
+  }
 ];
 
 interface StatCardProps {
@@ -223,6 +298,14 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // New state variables for enhanced features
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visibleReviews, setVisibleReviews] = useState(5);
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [currentReview, setCurrentReview] = useState<(typeof sampleReviews)[0] | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   
   // Get active location or null for "All Locations"
   const activeLocation = activeLocationId 
@@ -276,19 +359,33 @@ export default function Dashboard() {
     setDropdownOpen(false);
   };
   
-  // Filter reviews based on active location
+  // Filter reviews based on active location and search query
   useEffect(() => {
-    if (!activeLocationId) {
-      setFilteredReviews(sampleReviews);
-    } else {
+    let filtered = sampleReviews;
+    
+    // Filter by location if an active location is selected
+    if (activeLocationId) {
       const locationKey = 
         activeLocationId === '1' ? 'main' : 
         activeLocationId === '2' ? 'arlington' : 
         activeLocationId === '3' ? 'dallas' : 'fortworth';
       
-      setFilteredReviews(sampleReviews.filter(review => review.location === locationKey));
+      filtered = filtered.filter(review => review.location === locationKey);
     }
-  }, [activeLocationId]);
+    
+    // Filter by search query if one exists
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(review => 
+        review.content.toLowerCase().includes(query) || 
+        review.author.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredReviews(filtered);
+    // Reset visible reviews count when filter changes
+    setVisibleReviews(5);
+  }, [activeLocationId, searchQuery]);
   
   // Get filtered reviews based on the active tab
   const getTabReviews = () => {
@@ -303,7 +400,64 @@ export default function Dashboard() {
     }
   };
   
-  const tabReviews = getTabReviews();
+  const tabReviews = getTabReviews().slice(0, visibleReviews);
+  const hasMoreReviews = getTabReviews().length > visibleReviews;
+  
+  // Load more reviews handler
+  const handleLoadMore = () => {
+    setVisibleReviews(prev => prev + 5);
+  };
+  
+  // Open reply dialog
+  const handleOpenReplyDialog = (review: typeof sampleReviews[0]) => {
+    setCurrentReview(review);
+    setReplyText(review.reply || "");
+    setReplyDialogOpen(true);
+  };
+  
+  // Submit review reply
+  const handleSubmitReply = async () => {
+    if (!currentReview || !replyText.trim()) return;
+    
+    setIsSubmittingReply(true);
+    
+    try {
+      // This would be an API call to Google Business Profile in a real implementation
+      // Simulating API call with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the review in our local state
+      // In a real implementation, we would fetch the updated data from the API
+      // For the demo, manually update our sample data
+      sampleReviews.forEach((review, index) => {
+        if (review.id === currentReview.id) {
+          sampleReviews[index] = { ...review, replied: true, reply: replyText };
+        }
+      });
+      
+      // Update filtered reviews
+      setFilteredReviews(prevFiltered => {
+        return prevFiltered.map(review => 
+          review.id === currentReview.id
+            ? { ...review, replied: true, reply: replyText }
+            : review
+        );
+      });
+      
+      // Close the dialog
+      setReplyDialogOpen(false);
+      setCurrentReview(null);
+      setReplyText("");
+      
+      // Show success notification (would be implemented with a toast system in real app)
+      console.log("Reply submitted successfully");
+    } catch (error) {
+      console.error("Error submitting reply:", error);
+      // Show error notification
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
   
   return (
     <>
@@ -498,9 +652,30 @@ export default function Dashboard() {
             <CardTitle>Customer Reviews</CardTitle>
             <CardDescription>Latest feedback from Google Business Profile</CardDescription>
           </div>
-          <Button>Manage All Reviews</Button>
+          <Button onClick={() => window.location.href = '/dashboard/reviews'}>Manage All Reviews</Button>
         </CardHeader>
         <CardContent>
+          {/* Search Input */}
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search reviews by content or author..."
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setSearchQuery("")}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-3 mb-6">
               <TabsTrigger value="all">All Reviews ({filteredReviews.length})</TabsTrigger>
@@ -509,15 +684,15 @@ export default function Dashboard() {
             </TabsList>
             
             <TabsContent value="all" className="space-y-4">
-              {renderReviews(tabReviews)}
+              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
             </TabsContent>
             
             <TabsContent value="negative" className="space-y-4">
-              {renderReviews(tabReviews)}
+              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
             </TabsContent>
             
             <TabsContent value="unreplied" className="space-y-4">
-              {renderReviews(tabReviews)}
+              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -583,12 +758,91 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      
+      {/* Reply Dialog */}
+      {replyDialogOpen && currentReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-4">
+                Reply to {currentReview.author}&apos;s Review
+              </h3>
+              
+              <div className="mb-6 p-4 bg-gray-50 rounded-md">
+                <div className="flex items-center mb-2">
+                  <div className="font-medium">{currentReview.author}</div>
+                  <div className="ml-2 flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <svg 
+                        key={i}
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill={i < currentReview.rating ? "currentColor" : "none"}
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        className={i < currentReview.rating ? "text-yellow-500" : "text-gray-300"}
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    ))}
+                    <span className="ml-2 text-sm text-gray-500">{currentReview.date}</span>
+                  </div>
+                </div>
+                <p className="text-sm">{currentReview.content}</p>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">
+                  Your Reply
+                </label>
+                <textarea
+                  id="reply"
+                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={5}
+                  placeholder="Type your reply here..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                ></textarea>
+                <p className="text-xs text-gray-500 mt-1">
+                  Your reply will be public and visible to anyone who can see this review on Google.
+                </p>
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReplyDialogOpen(false);
+                    setCurrentReview(null);
+                    setReplyText("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitReply}
+                  disabled={isSubmittingReply || !replyText.trim()}
+                >
+                  {isSubmittingReply ? "Submitting..." : "Submit Reply"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 // Helper function to render reviews
-function renderReviews(reviews: typeof sampleReviews) {
+function renderReviews(
+  reviews: typeof sampleReviews, 
+  onReplyClick: (review: typeof sampleReviews[0]) => void,
+  hasMoreReviews: boolean,
+  onLoadMore: () => void
+) {
   if (reviews.length === 0) {
     return (
       <div className="text-center py-8">
@@ -625,17 +879,32 @@ function renderReviews(reviews: typeof sampleReviews) {
                 </div>
               </div>
               <div>
-                <Button variant={review.replied ? "outline" : "default"} size="sm">
+                <Button 
+                  variant={review.replied ? "outline" : "default"} 
+                  size="sm"
+                  onClick={() => onReplyClick(review)}
+                >
                   {review.replied ? "View Reply" : "Reply"}
                 </Button>
               </div>
             </div>
             <p className="text-sm">{review.content}</p>
+            
+            {/* Review Reply (if exists) */}
+            {review.replied && review.reply && (
+              <div className="mt-3 pl-4 border-l-2 border-blue-200">
+                <p className="text-xs font-semibold text-blue-600">Your response:</p>
+                <p className="text-sm text-gray-700 mt-1">{review.reply}</p>
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {reviews.length > 0 && (
-        <Button className="mt-6 w-full" variant="outline">Load More Reviews</Button>
+      
+      {hasMoreReviews && (
+        <Button className="mt-6 w-full" variant="outline" onClick={onLoadMore}>
+          Load More Reviews
+        </Button>
       )}
     </>
   );
