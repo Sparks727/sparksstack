@@ -31,9 +31,14 @@ export function LocationSwitcher() {
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-secondary">
           <div className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-sm font-medium truncate max-w-[150px]">
-            {locations[0].name}
-          </span>
+          <div>
+            <span className="text-sm font-medium block truncate max-w-[150px]">
+              {locations[0].name}
+            </span>
+            <span className="text-xs text-muted-foreground block truncate max-w-[150px]">
+              {locations[0].address}
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -48,24 +53,34 @@ export function LocationSwitcher() {
         value={activeLocationId || undefined}
         onValueChange={(value: string) => setActiveLocation(value)}
       >
-        <SelectTrigger className="h-8 gap-1 w-[180px] bg-secondary border-0">
+        <SelectTrigger className="h-auto min-h-10 gap-1 w-[260px] bg-secondary border-0 py-1">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <SelectValue placeholder="Select location">
-              {activeLocation.name}
-            </SelectValue>
+            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+            <div className="flex flex-col items-start">
+              <SelectValue placeholder="Select location">
+                {activeLocation.name}
+              </SelectValue>
+              {activeLocationId && (
+                <span className="text-xs text-muted-foreground truncate max-w-[220px]">
+                  {activeLocation.address}
+                </span>
+              )}
+            </div>
           </div>
         </SelectTrigger>
         <SelectContent>
           {locations.map((location) => (
-            <SelectItem key={location.id} value={location.id}>
+            <SelectItem key={location.id} value={location.id} className="py-2">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-2 h-2 rounded-full ${
                     location.isConnected ? "bg-green-500" : "bg-yellow-500"
-                  }`}
+                  } flex-shrink-0`}
                 />
-                <span>{location.name}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{location.name}</span>
+                  <span className="text-xs text-muted-foreground">{location.address}</span>
+                </div>
               </div>
             </SelectItem>
           ))}
