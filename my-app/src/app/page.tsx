@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { isSignedIn, user } = useUser();
-  const router = useRouter();
 
   if (!isSignedIn) {
     return (
@@ -59,12 +57,9 @@ export default function Home() {
         <h1 className="text-2xl font-bold">Welcome, {user?.firstName || 'User'}!</h1>
         <p className="text-lg">You are successfully signed in.</p>
         
-        <button 
-          onClick={() => router.push('/dashboard')}
-          className="rounded-full bg-foreground text-background px-4 py-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium"
-        >
-          Go to Dashboard
-        </button>
+        <p className="text-md text-muted-foreground">
+          This is a simplified version of the app for testing Clerk authentication.
+        </p>
 
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
