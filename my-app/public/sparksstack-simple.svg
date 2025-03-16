@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50" viewBox="0 0 200 50">
-  <style>
-    .logo-text { font-family: Arial, sans-serif; font-weight: bold; }
-    .spark { fill: #ff6b00; }
-    .stack { fill: #000000; }
-  </style>
-  <text x="10" y="35" class="logo-text spark">Sparks</text>
-  <text x="90" y="35" class="logo-text stack">Stack</text>
-</svg> 

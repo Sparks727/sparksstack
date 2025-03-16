@@ -1,9 +1,8 @@
 "use client";
 
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { useState } from "react";
-import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { 
   Card, 
   CardContent, 
@@ -190,11 +189,6 @@ export default function LocationsPage() {
   const [viewMode, setViewMode] = useState<"table" | "profile">("table");
   const [selectedLocation, setSelectedLocation] = useState<BusinessLocation | null>(null);
   
-  // Protect this page - redirect if not authenticated
-  if (isLoaded && !user) {
-    redirect("/");
-  }
-
   // Select all rows
   const selectAll = (checked: boolean) => {
     if (checked) {
@@ -323,541 +317,530 @@ export default function LocationsPage() {
     setSelectedLocation(null);
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <SidebarNav />
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
-          <div className="px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              {viewMode === "profile" && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="mr-2"
-                  onClick={backToTable}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Back
-                </Button>
-              )}
-              <h1 className="text-xl font-semibold">
-                {viewMode === "table" ? "Locations" : selectedLocation?.name}
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden md:inline-block">
-                Welcome, {user?.firstName}
-              </span>
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          </div>
-        </header>
+  // Protect this page - redirect if not authenticated (this is now handled by the layout)
+  if (isLoaded && !user) {
+    redirect("/");
+  }
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {viewMode === "table" ? (
-            <div className="max-w-7xl mx-auto space-y-6">
-              {/* Business Group Header */}
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Select defaultValue="blue-sky">
-                    <SelectTrigger className="w-[300px]">
-                      <SelectValue placeholder="Select business group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="blue-sky">Blue Sky Roofing - OmniLocal</SelectItem>
-                      <SelectItem value="other">Other Business Group</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline">Group settings</Button>
-                    <Button variant="outline">Create group</Button>
-                  </div>
-                </div>
+  return (
+    <>
+      {/* Header for location navigation */}
+      <div className="mb-4">
+        {viewMode === "profile" && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mr-2"
+            onClick={backToTable}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+        )}
+        <h1 className="text-xl font-semibold">
+          {viewMode === "table" ? "Locations" : selectedLocation?.name}
+        </h1>
+      </div>
+
+      {/* Main content */}
+      <div className="space-y-6">
+        {viewMode === "table" ? (
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Business Group Header */}
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex flex-col md:flex-row gap-4">
+                <Select defaultValue="blue-sky">
+                  <SelectTrigger className="w-[300px]">
+                    <SelectValue placeholder="Select business group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blue-sky">Blue Sky Roofing - OmniLocal</SelectItem>
+                    <SelectItem value="other">Other Business Group</SelectItem>
+                  </SelectContent>
+                </Select>
                 
-                <div className="w-full md:w-auto flex flex-col gap-1">
-                  <div className="flex justify-between text-sm">
-                    <span>{businessLocations.length} businesses</span>
-                    <span>100% verified</span>
-                  </div>
-                  <Progress value={100} className="h-2 w-[250px]" />
+                <div className="flex gap-2">
+                  <Button variant="outline">Group settings</Button>
+                  <Button variant="outline">Create group</Button>
                 </div>
               </div>
+              
+              <div className="w-full md:w-auto flex flex-col gap-1">
+                <div className="flex justify-between text-sm">
+                  <span>{businessLocations.length} businesses</span>
+                  <span>100% verified</span>
+                </div>
+                <Progress value={100} className="h-2 w-[250px]" />
+              </div>
+            </div>
 
-              {/* Businesses Table Card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Businesses</CardTitle>
-                    <div className="flex gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue placeholder="Filter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All ({businessLocations.length})</SelectItem>
-                          <SelectItem value="verified">Verified</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button>
-                            Add business
-                            <ChevronDown className="ml-2 h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem>Add single business</DropdownMenuItem>
-                          <DropdownMenuItem>Import businesses</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+            {/* Businesses Table Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-center">
+                  <CardTitle>Businesses</CardTitle>
+                  <div className="flex gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Filter" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All ({businessLocations.length})</SelectItem>
+                        <SelectItem value="verified">Verified</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button>
+                          Add business
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>Add single business</DropdownMenuItem>
+                        <DropdownMenuItem>Import businesses</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox 
+                            checked={selectedRows.length === businessLocations.length && businessLocations.length > 0}
+                            onCheckedChange={(checked) => selectAll(checked as boolean)}
+                          />
+                        </TableHead>
+                        <TableHead>
+                          <div className="flex items-center gap-1">
+                            Business
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead>Reviews</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {businessLocations.map((location) => (
+                        <TableRow key={location.id}>
+                          <TableCell>
                             <Checkbox 
-                              checked={selectedRows.length === businessLocations.length && businessLocations.length > 0}
-                              onCheckedChange={(checked) => selectAll(checked as boolean)}
+                              checked={selectedRows.includes(location.id)}
+                              onCheckedChange={(checked) => toggleRow(location.id, checked as boolean)}
                             />
-                          </TableHead>
-                          <TableHead>
-                            <div className="flex items-center gap-1">
-                              Business
-                              <ChevronDown className="h-4 w-4" />
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{location.name}</div>
+                              <div className="text-sm text-muted-foreground">{location.address}</div>
                             </div>
-                          </TableHead>
-                          <TableHead>Reviews</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead></TableHead>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <svg 
+                                    key={star}
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    viewBox="0 0 24 24" 
+                                    fill={star <= Math.round(location.rating || 0) ? "#FFD700" : "#E2E8F0"} 
+                                    className="w-3.5 h-3.5"
+                                  >
+                                    <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                  </svg>
+                                ))}
+                              </div>
+                              <span className="text-sm font-medium">{location.rating}</span>
+                              <span className="text-sm text-muted-foreground">({location.reviews})</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50 flex items-center gap-1">
+                              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </div>
+                              Verified
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-4">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="Edit business info"
+                                onClick={() => openEditProfile(location)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                title="Add photos"
+                                onClick={() => openAddImage(location)}
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                title="Create post"
+                                onClick={() => openCreatePost(location)}
+                              >
+                                <FileEdit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="flex items-center gap-2 text-blue-600"
+                                onClick={() => viewProfile(location)}
+                              >
+                                <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+                                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+                                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+                                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+                                </svg>
+                                View profile
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {businessLocations.map((location) => (
-                          <TableRow key={location.id}>
-                            <TableCell>
-                              <Checkbox 
-                                checked={selectedRows.includes(location.id)}
-                                onCheckedChange={(checked) => toggleRow(location.id, checked as boolean)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{location.name}</div>
-                                <div className="text-sm text-muted-foreground">{location.address}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5">
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg 
-                                      key={star}
-                                      xmlns="http://www.w3.org/2000/svg" 
-                                      viewBox="0 0 24 24" 
-                                      fill={star <= Math.round(location.rating || 0) ? "#FFD700" : "#E2E8F0"} 
-                                      className="w-3.5 h-3.5"
-                                    >
-                                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                                    </svg>
-                                  ))}
-                                </div>
-                                <span className="text-sm font-medium">{location.rating}</span>
-                                <span className="text-sm text-muted-foreground">({location.reviews})</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50 flex items-center gap-1">
-                                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
-                                </div>
-                                Verified
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end gap-4">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  title="Edit business info"
-                                  onClick={() => openEditProfile(location)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Add photos"
-                                  onClick={() => openAddImage(location)}
-                                >
-                                  <ImageIcon className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Create post"
-                                  onClick={() => openCreatePost(location)}
-                                >
-                                  <FileEdit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  className="flex items-center gap-2 text-blue-600"
-                                  onClick={() => viewProfile(location)}
-                                >
-                                  <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
-                                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
-                                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
-                                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
-                                  </svg>
-                                  View profile
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* Pagination */}
+                <div className="flex items-center justify-end space-x-4 py-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">Rows per page:</span>
+                    <Select defaultValue="10">
+                      <SelectTrigger className="w-16">
+                        <SelectValue placeholder="10" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   
-                  {/* Pagination */}
-                  <div className="flex items-center justify-end space-x-4 py-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-muted-foreground">Rows per page:</span>
-                      <Select defaultValue="10">
-                        <SelectTrigger className="w-16">
-                          <SelectValue placeholder="10" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground">
-                      1-{businessLocations.length} of {businessLocations.length}
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="icon" disabled>
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" disabled>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    1-{businessLocations.length} of {businessLocations.length}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            /* Location Details View */
-            selectedLocation && (
-              <div className="max-w-5xl mx-auto">
-                {/* Location Header with Actions */}
-                <Card className="mb-6">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-800 font-bold text-xl">{selectedLocation.name.charAt(0)}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-bold">{selectedLocation.name}</h2>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <svg 
-                                key={star}
-                                xmlns="http://www.w3.org/2000/svg" 
-                                viewBox="0 0 24 24" 
-                                fill={star <= Math.round(selectedLocation.rating || 0) ? "#FFD700" : "#E2E8F0"} 
-                                className="w-4 h-4"
-                              >
-                                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                              </svg>
-                            ))}
-                          </div>
-                          <span className="text-sm font-medium">{selectedLocation.rating}</span>
-                          <span className="text-sm text-muted-foreground">({selectedLocation.reviews} reviews)</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">{selectedLocation.address}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditProfile(selectedLocation)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openAddImage(selectedLocation)}
-                        >
-                          <ImageIcon className="h-4 w-4 mr-2" />
-                          Add Photos
-                        </Button>
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={() => openCreatePost(selectedLocation)}
-                        >
-                          <FileEdit className="h-4 w-4 mr-2" />
-                          Create Post
-                        </Button>
-                      </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="icon" disabled>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" disabled>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* Location Details View */
+          selectedLocation && (
+            <div className="max-w-5xl mx-auto">
+              {/* Location Header with Actions */}
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                    <div className="flex-shrink-0 w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-800 font-bold text-xl">{selectedLocation.name.charAt(0)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Business Information */}
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Business Information
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold">{selectedLocation.name}</h2>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg 
+                              key={star}
+                              xmlns="http://www.w3.org/2000/svg" 
+                              viewBox="0 0 24 24" 
+                              fill={star <= Math.round(selectedLocation.rating || 0) ? "#FFD700" : "#E2E8F0"} 
+                              className="w-4 h-4"
+                            >
+                              <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium">{selectedLocation.rating}</span>
+                        <span className="text-sm text-muted-foreground">({selectedLocation.reviews} reviews)</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{selectedLocation.address}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => openEditProfile(selectedLocation)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
                       </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <span className="text-sm text-muted-foreground block">Category</span>
-                          <span className="text-sm">{selectedLocation.category}</span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground block">Address</span>
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{selectedLocation.address}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground block">Phone</span>
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm">{selectedLocation.phone}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <span className="text-sm text-muted-foreground block">Website</span>
-                          <div className="flex items-center gap-2">
-                            <Globe className="w-4 h-4 text-muted-foreground" />
-                            <a href={selectedLocation.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
-                              {selectedLocation.website}
-                            </a>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground block">Hours</span>
-                          <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{selectedLocation.hours}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Photos Grid */}
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Photos
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => openAddImage(selectedLocation)}
                       >
-                        Add Photo
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Add Photos
                       </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {Array.from({ length: 8 }).map((_, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-square rounded-md bg-gray-200 overflow-hidden relative group"
-                        >
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-gray-400" />
-                          </div>
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Button variant="ghost" size="sm" className="text-white h-7">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Recent Reviews */}
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Recent Reviews
-                      <Button variant="outline" size="sm">
-                        View All
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-5">
-                      {Array.from({ length: 3 }).map((_, index) => {
-                        const reviewRating = Math.min(5, Math.max(1, 
-                          Math.floor((selectedLocation.rating || 4) + (Math.random() * 2 - 1))
-                        ));
-                        const reviewDate = new Date();
-                        reviewDate.setDate(reviewDate.getDate() - Math.floor(Math.random() * 30));
-                        
-                        return (
-                          <div key={index} className="pb-4 border-b last:border-b-0 last:pb-0">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                  <span className="text-blue-800 font-medium text-sm">
-                                    {String.fromCharCode(65 + index)}
-                                  </span>
-                                </div>
-                                <div>
-                                  <div className="font-medium">Customer {String.fromCharCode(65 + index)}</div>
-                                  <div className="flex mt-1">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <svg 
-                                        key={star}
-                                        xmlns="http://www.w3.org/2000/svg" 
-                                        viewBox="0 0 24 24" 
-                                        fill={star <= reviewRating ? "#FFD700" : "#E2E8F0"} 
-                                        className="w-4 h-4"
-                                      >
-                                        <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                                      </svg>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {reviewDate.toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="mt-2 text-sm">
-                              {reviewRating >= 4 
-                                ? "Great service from the team at Blue Sky Roofing. They were professional, efficient, and the quality of work exceeded my expectations."
-                                : "The service was okay. They got the job done, but there were some communication issues and delays in the project timeline."}
-                            </div>
-                            <div className="mt-3">
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-blue-600">Reply</Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Recent Posts */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Recent Posts
                       <Button 
-                        variant="outline" 
+                        variant="default" 
                         size="sm"
                         onClick={() => openCreatePost(selectedLocation)}
                       >
+                        <FileEdit className="h-4 w-4 mr-2" />
                         Create Post
                       </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Business Information */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Business Information
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => openEditProfile(selectedLocation)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      {Array.from({ length: 2 }).map((_, index) => {
-                        const postDate = new Date();
-                        postDate.setDate(postDate.getDate() - (index * 7 + Math.floor(Math.random() * 5)));
-                        
-                        return (
-                          <div key={index} className="border rounded-md p-4">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                  <span className="text-blue-800 font-medium">{selectedLocation.name.charAt(0)}</span>
-                                </div>
-                                <div>
-                                  <div className="font-medium">{selectedLocation.name}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {postDate.toLocaleDateString()} · {["Update", "Offer"][index]}
-                                  </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground block">Category</span>
+                        <span className="text-sm">{selectedLocation.category}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground block">Address</span>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{selectedLocation.address}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground block">Phone</span>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">{selectedLocation.phone}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-sm text-muted-foreground block">Website</span>
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-muted-foreground" />
+                          <a href={selectedLocation.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
+                            {selectedLocation.website}
+                          </a>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground block">Hours</span>
+                        <div className="flex items-start gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{selectedLocation.hours}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Photos Grid */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Photos
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openAddImage(selectedLocation)}
+                    >
+                      Add Photo
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, index) => (
+                      <div 
+                        key={index} 
+                        className="aspect-square rounded-md bg-gray-200 overflow-hidden relative group"
+                      >
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Button variant="ghost" size="sm" className="text-white h-7">
+                            View
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Reviews */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Recent Reviews
+                    <Button variant="outline" size="sm">
+                      View All
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-5">
+                    {Array.from({ length: 3 }).map((_, index) => {
+                      const reviewRating = Math.min(5, Math.max(1, 
+                        Math.floor((selectedLocation.rating || 4) + (Math.random() * 2 - 1))
+                      ));
+                      const reviewDate = new Date();
+                      reviewDate.setDate(reviewDate.getDate() - Math.floor(Math.random() * 30));
+                      
+                      return (
+                        <div key={index} className="pb-4 border-b last:border-b-0 last:pb-0">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-blue-800 font-medium text-sm">
+                                  {String.fromCharCode(65 + index)}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="font-medium">Customer {String.fromCharCode(65 + index)}</div>
+                                <div className="flex mt-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg 
+                                      key={star}
+                                      xmlns="http://www.w3.org/2000/svg" 
+                                      viewBox="0 0 24 24" 
+                                      fill={star <= reviewRating ? "#FFD700" : "#E2E8F0"} 
+                                      className="w-4 h-4"
+                                    >
+                                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                    </svg>
+                                  ))}
                                 </div>
                               </div>
                             </div>
-
-                            <div className="mt-3 text-sm">
-                              {index === 0 ? 
-                                "We're excited to announce that we've expanded our service area to include all of Manatee County! Contact us today for a free estimate on your roofing project." : 
-                                "Summer special! Get 10% off all roof inspections booked in August. Don't wait until hurricane season is in full swing - make sure your roof is ready now."
-                              }
+                            <div className="text-sm text-muted-foreground">
+                              {reviewDate.toLocaleDateString()}
                             </div>
+                          </div>
+                          <div className="mt-2 text-sm">
+                            {reviewRating >= 4 
+                              ? "Great service from the team at Blue Sky Roofing. They were professional, efficient, and the quality of work exceeded my expectations."
+                              : "The service was okay. They got the job done, but there were some communication issues and delays in the project timeline."}
+                          </div>
+                          <div className="mt-3">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-blue-600">Reply</Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
 
-                            {index === 1 && (
-                              <div className="mt-3 aspect-video rounded bg-gray-200 flex items-center justify-center">
-                                <ImageIcon className="h-8 w-8 text-gray-400" />
+              {/* Recent Posts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Recent Posts
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openCreatePost(selectedLocation)}
+                    >
+                      Create Post
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Array.from({ length: 2 }).map((_, index) => {
+                      const postDate = new Date();
+                      postDate.setDate(postDate.getDate() - (index * 7 + Math.floor(Math.random() * 5)));
+                      
+                      return (
+                        <div key={index} className="border rounded-md p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-blue-800 font-medium">{selectedLocation.name.charAt(0)}</span>
                               </div>
-                            )}
-
-                            <div className="mt-3 flex items-center gap-4 text-sm">
-                              <div className="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                                </svg>
-                                <span>{Math.floor(Math.random() * 20)}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                </svg>
-                                <span>{Math.floor(Math.random() * 5)}</span>
+                              <div>
+                                <div className="font-medium">{selectedLocation.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {postDate.toLocaleDateString()} · {["Update", "Offer"][index]}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )
-          )}
-        </main>
+
+                          <div className="mt-3 text-sm">
+                            {index === 0 ? 
+                              "We're excited to announce that we've expanded our service area to include all of Manatee County! Contact us today for a free estimate on your roofing project." : 
+                              "Summer special! Get 10% off all roof inspections booked in August. Don't wait until hurricane season is in full swing - make sure your roof is ready now."
+                            }
+                          </div>
+
+                          {index === 1 && (
+                            <div className="mt-3 aspect-video rounded bg-gray-200 flex items-center justify-center">
+                              <ImageIcon className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+
+                          <div className="mt-3 flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                              </svg>
+                              <span>{Math.floor(Math.random() * 20)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                              </svg>
+                              <span>{Math.floor(Math.random() * 5)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )
+        )}
       </div>
 
       {/* Edit Profile Dialog */}
@@ -1013,7 +996,7 @@ export default function LocationsPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#E4405F">
-                        <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913a5.885 5.885 0 001.384 2.126A5.868 5.868 0 004.14 23.37c.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558a5.898 5.898 0 002.126-1.384 5.86 5.86 0 001.384-2.126c.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913a5.89 5.89 0 00-1.384-2.126A5.847 5.847 0 0019.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.819 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227a3.81 3.81 0 01-.899 1.382 3.744 3.744 0 01-1.38.896c-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421a3.716 3.716 0 01-1.379-.899 3.644 3.644 0 01-.9-1.38c-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678a6.162 6.162 0 100 12.324 6.162 6.162 0 100-12.324zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405a1.441 1.441 0 01-2.88 0 1.44 1.44 0 012.88 0z"/>
+                        <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913a5.885 5.885 0 001.384 2.126A5.868 5.868 0 004.14 23.37c.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558a5.898 5.898 0 002.126-1.384 5.86 5.86 0 001.384-2.126c.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.859.072-3.211 0-3.586-.015-4.861-.074-1.171-.061-1.816-.256-2.236-.421a3.716 3.716 0 01-1.379-.899 3.644 3.644 0 01-.9-1.38c-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678a6.162 6.162 0 100 12.324 6.162 6.162 0 100-12.324zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405a1.441 1.441 0 01-2.88 0 1.44 1.44 0 012.88 0z"/>
                       </svg>
                       <Input 
                         value={editedLocation.socialProfiles?.instagram || ""} 
@@ -1561,6 +1544,6 @@ export default function LocationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 } 

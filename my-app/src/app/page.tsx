@@ -1,11 +1,22 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect } from 'react';
 import { useUser, SignInButton } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
+  const router = useRouter();
+  
+  // Redirect signed-in users to dashboard
+  useEffect(() => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    }
+  }, [isSignedIn, router]);
 
+  // Only show the landing page for non-signed-in users
   if (!isSignedIn) {
     return (
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -37,24 +48,6 @@ export default function Home() {
     );
   }
 
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center">
-        <Image
-          src="/SparksStackLogo.png"
-          alt="SparksStack Logo"
-          width={250}
-          height={80}
-          priority
-          className="mb-4"
-        />
-        <h2 className="text-2xl font-bold">Welcome, {user?.firstName || 'User'}!</h2>
-        <p className="text-lg">You are successfully signed in.</p>
-        
-        <p className="text-md text-muted-foreground">
-          This is a simplified version of the app for testing Clerk authentication.
-        </p>
-      </main>
-    </div>
-  );
+  // This section won't render as we redirect in the useEffect
+  return null;
 }
