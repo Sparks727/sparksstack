@@ -179,6 +179,52 @@ const sampleReviews = [
     replied: true,
     location: "main"
   },
+  // Add more negative and unreplied reviews for each location
+  {
+    id: 6,
+    author: "Sarah Johnson",
+    rating: 2,
+    date: "2023-07-18",
+    content: "Disappointed with the service. The technicians were late and didn't clean up properly after the job.",
+    replied: false,
+    location: "main"
+  },
+  {
+    id: 7,
+    author: "David Williams",
+    rating: 1,
+    date: "2023-07-12",
+    content: "Terrible experience. The roof is still leaking after they claimed to have fixed it. Waste of money.",
+    replied: true,
+    location: "arlington"
+  },
+  {
+    id: 8,
+    author: "Emily Davis",
+    rating: 3,
+    date: "2023-07-08",
+    content: "Average service. Did the job but nothing exceptional that would make me recommend them over other companies.",
+    replied: false,
+    location: "dallas"
+  },
+  {
+    id: 9,
+    author: "Thomas Brown",
+    rating: 2,
+    date: "2023-07-05",
+    content: "Poor customer service. Had to call multiple times just to get someone to respond to my concerns.",
+    replied: false,
+    location: "fortworth"
+  },
+  {
+    id: 10,
+    author: "Jennifer Miller",
+    rating: 4,
+    date: "2023-06-25",
+    content: "Good quality work but took longer than promised to complete the job.",
+    replied: false,
+    location: "main"
+  }
 ];
 
 interface StatCardProps {

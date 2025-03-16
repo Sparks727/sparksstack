@@ -124,7 +124,7 @@ export function SidebarNav() {
     >
       <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
         {!isCollapsed && (
-          <span className="font-bold text-lg">SparksStack</span>
+          <span className="font-bold text-lg">Blue Sky Roofing</span>
         )}
         <Button
           variant="ghost"
@@ -173,7 +173,7 @@ export function SidebarNav() {
         </ul>
       </nav>
       <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-xs text-muted-foreground">
-        {!isCollapsed && <span>© 2023 SparksStack</span>}
+        {!isCollapsed && <span>© 2023 Blue Sky Roofing</span>}
       </div>
     </aside>
   );

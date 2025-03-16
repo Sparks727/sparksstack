@@ -36,8 +36,8 @@ export default function Sidebar() {
       {/* Logo and collapse button */}
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
-          <Link href="/dashboard" className="text-xl font-bold text-orange-500">
-            SparksStack
+          <Link href="/dashboard" className="text-xl font-bold text-blue-500">
+            Blue Sky Roofing
           </Link>
         )}
         <button 
