@@ -4,27 +4,61 @@ import { useUser } from '@clerk/nextjs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowUpIcon, ArrowDownIcon, UsersIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon, MapPin } from 'lucide-react';
 import { useLocationStore } from '@/lib/store/location-store';
+import { Button } from '@/components/ui/button';
 
-// Sample data for charts
-const data = [
+// Sample data for main office
+const mainOfficeData = [
   { name: 'Jan', value: 400 },
-  { name: 'Feb', value: 300 },
-  { name: 'Mar', value: 600 },
-  { name: 'Apr', value: 800 },
-  { name: 'May', value: 500 },
-  { name: 'Jun', value: 900 },
-  { name: 'Jul', value: 700 },
+  { name: 'Feb', value: 320 },
+  { name: 'Mar', value: 550 },
+  { name: 'Apr', value: 780 },
+  { name: 'May', value: 510 },
+  { name: 'Jun', value: 890 },
+  { name: 'Jul', value: 680 },
+];
+
+// Sample data for Arlington location
+const arlingtonData = [
+  { name: 'Jan', value: 350 },
+  { name: 'Feb', value: 290 },
+  { name: 'Mar', value: 420 },
+  { name: 'Apr', value: 590 },
+  { name: 'May', value: 480 },
+  { name: 'Jun', value: 710 },
+  { name: 'Jul', value: 590 },
+];
+
+// Sample data for Dallas location
+const dallasData = [
+  { name: 'Jan', value: 480 },
+  { name: 'Feb', value: 390 },
+  { name: 'Mar', value: 620 },
+  { name: 'Apr', value: 850 },
+  { name: 'May', value: 640 },
+  { name: 'Jun', value: 950 },
+  { name: 'Jul', value: 820 },
+];
+
+// Sample data for Fort Worth location
+const fortWorthData = [
+  { name: 'Jan', value: 280 },
+  { name: 'Feb', value: 220 },
+  { name: 'Mar', value: 380 },
+  { name: 'Apr', value: 490 },
+  { name: 'May', value: 330 },
+  { name: 'Jun', value: 610 },
+  { name: 'Jul', value: 450 },
 ];
 
 // Sample data for all locations combined
 const allLocationsData = [
-  { name: 'Jan', value: 625 },
-  { name: 'Feb', value: 480 },
-  { name: 'Mar', value: 950 },
-  { name: 'Apr', value: 1200 },
-  { name: 'May', value: 850 },
-  { name: 'Jun', value: 1400 },
-  { name: 'Jul', value: 1100 },
+  { name: 'Jan', value: 1510 },
+  { name: 'Feb', value: 1220 },
+  { name: 'Mar', value: 1970 },
+  { name: 'Apr', value: 2710 },
+  { name: 'May', value: 1960 },
+  { name: 'Jun', value: 3160 },
+  { name: 'Jul', value: 2540 },
 ];
 
 interface StatCardProps {
@@ -56,54 +90,82 @@ const StatCard = ({ title, value, change, icon: Icon, trend }: StatCardProps) =>
 
 // Location stat values - would come from API in real app
 const locationStats = {
-  '1': { // SparksStack Downtown
+  '1': { // Blue Sky Roofing - Main Office
     users: "1,324",
-    revenue: "$7,245",
-    orders: "1,156",
-    growth: "9.3%",
-    userChange: "8% increase",
-    revenueChange: "5% increase",
-    ordersChange: "3% decrease",
+    revenue: "$42,750",
+    orders: "78",
+    growth: "8.7%",
+    userChange: "12% increase",
+    revenueChange: "15% increase",
+    ordersChange: "5% increase",
     growthChange: "7% increase",
-    userTrend: "up" as const,
-    revenueTrend: "up" as const,
-    ordersTrend: "down" as const,
-    growthTrend: "up" as const,
-  },
-  '2': { // SparksStack Uptown
-    users: "1,217",
-    revenue: "$6,000",
-    orders: "1,200",
-    growth: "6.0%",
-    userChange: "14% increase",
-    revenueChange: "10% increase",
-    ordersChange: "8% increase",
-    growthChange: "12% increase",
     userTrend: "up" as const,
     revenueTrend: "up" as const,
     ordersTrend: "up" as const,
     growthTrend: "up" as const,
   },
-  // Combined stats for "All Locations"
-  all: {
-    users: "2,541",
-    revenue: "$13,245",
-    orders: "2,356",
-    growth: "15.3%",
-    userChange: "12% increase",
-    revenueChange: "8% increase",
-    ordersChange: "5% decrease",
+  '2': { // Blue Sky Roofing - Arlington
+    users: "973",
+    revenue: "$35,620",
+    orders: "64",
+    growth: "6.8%",
+    userChange: "9% increase",
+    revenueChange: "11% increase",
+    ordersChange: "8% increase",
+    growthChange: "5% increase",
+    userTrend: "up" as const,
+    revenueTrend: "up" as const,
+    ordersTrend: "up" as const,
+    growthTrend: "up" as const,
+  },
+  '3': { // Blue Sky Roofing - Dallas
+    users: "1,458",
+    revenue: "$51,935",
+    orders: "93",
+    growth: "11.2%",
+    userChange: "16% increase",
+    revenueChange: "19% increase",
+    ordersChange: "14% increase",
     growthChange: "10% increase",
     userTrend: "up" as const,
     revenueTrend: "up" as const,
+    ordersTrend: "up" as const,
+    growthTrend: "up" as const,
+  },
+  '4': { // Blue Sky Roofing - Fort Worth
+    users: "812",
+    revenue: "$28,450",
+    orders: "52",
+    growth: "5.3%",
+    userChange: "7% increase",
+    revenueChange: "4% increase",
+    ordersChange: "-2% decrease",
+    growthChange: "3% increase",
+    userTrend: "up" as const,
+    revenueTrend: "up" as const,
     ordersTrend: "down" as const,
+    growthTrend: "up" as const,
+  },
+  // Combined stats for "All Locations"
+  all: {
+    users: "4,567",
+    revenue: "$158,755",
+    orders: "287",
+    growth: "9.5%",
+    userChange: "14% increase",
+    revenueChange: "12% increase",
+    ordersChange: "9% increase",
+    growthChange: "8% increase",
+    userTrend: "up" as const,
+    revenueTrend: "up" as const,
+    ordersTrend: "up" as const,
     growthTrend: "up" as const,
   }
 };
 
 export default function Dashboard() {
   const { user } = useUser();
-  const { locations, activeLocationId } = useLocationStore();
+  const { locations, activeLocationId, setActiveLocation } = useLocationStore();
   
   // Get active location or null for "All Locations"
   const activeLocation = activeLocationId 
@@ -116,7 +178,15 @@ export default function Dashboard() {
     : locationStats.all;
   
   // Get chart data based on active location or all locations
-  const chartData = activeLocationId ? data : allLocationsData;
+  const chartData = activeLocationId 
+    ? (activeLocationId === '1' 
+        ? mainOfficeData 
+        : activeLocationId === '2' 
+          ? arlingtonData 
+          : activeLocationId === '3' 
+            ? dallasData 
+            : fortWorthData) 
+    : allLocationsData;
   
   return (
     <>
@@ -186,23 +256,45 @@ export default function Dashboard() {
       {!activeLocation && locations.length > 0 && (
         <div className="mt-6 bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">Your Locations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {locations.map(location => (
               <div key={location.id} className="border rounded-md p-4 hover:border-blue-500 transition-colors">
                 <div className="flex items-start">
                   <div className="p-2 bg-blue-50 rounded-full mr-3">
                     <MapPin size={18} className="text-blue-500" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-medium">{location.name}</h3>
                     <p className="text-sm text-gray-500">{location.address}</p>
-                    <div className="mt-2 text-sm">
-                      {location.isConnected ? (
-                        <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Connected</span>
-                      ) : (
-                        <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Not Connected</span>
-                      )}
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="text-sm">
+                        {location.isConnected ? (
+                          <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Connected</span>
+                        ) : (
+                          <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Not Connected</span>
+                        )}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => setActiveLocation(location.id)}
+                      >
+                        View Details
+                      </Button>
                     </div>
+                  </div>
+                </div>
+                
+                {/* Additional location info */}
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 pt-3 border-t">
+                  <div>
+                    <span className="block font-medium">Phone:</span>
+                    {location.phone}
+                  </div>
+                  <div>
+                    <span className="block font-medium">Service Status:</span>
+                    {location.id === '1' || location.id === '2' ? 'Active' : 'Limited'}
                   </div>
                 </div>
               </div>

@@ -20,22 +20,38 @@ interface LocationState {
   setAllLocations: () => void;
 }
 
-// Initial sample data
+// Initial sample data - Blue Sky Roofing locations
 const initialLocations: Location[] = [
   {
     id: '1',
-    name: 'SparksStack Downtown',
-    address: '123 Main St, San Francisco, CA 94105',
-    phone: '(415) 555-1234',
-    website: 'https://downtown.sparksstack.com',
+    name: 'Blue Sky Roofing - Main Office',
+    address: '2500 W Park Row Dr, Pantego, TX 76013',
+    phone: '(817) 769-2553',
+    website: 'https://blueskyroofingtx.com',
     isConnected: true
   },
   {
     id: '2',
-    name: 'SparksStack Uptown',
-    address: '456 Market St, San Francisco, CA 94103',
-    phone: '(415) 555-5678',
-    website: 'https://uptown.sparksstack.com',
+    name: 'Blue Sky Roofing - Arlington',
+    address: '1801 N Collins St, Arlington, TX 76011',
+    phone: '(817) 769-2554',
+    website: 'https://arlington.blueskyroofingtx.com',
+    isConnected: true
+  },
+  {
+    id: '3',
+    name: 'Blue Sky Roofing - Dallas',
+    address: '6060 N Central Expwy, Dallas, TX 75206',
+    phone: '(214) 347-7663',
+    website: 'https://dallas.blueskyroofingtx.com',
+    isConnected: false
+  },
+  {
+    id: '4',
+    name: 'Blue Sky Roofing - Fort Worth',
+    address: '1612 Summit Ave, Fort Worth, TX 76102',
+    phone: '(817) 502-9119',
+    website: 'https://fortworth.blueskyroofingtx.com',
     isConnected: false
   }
 ];
