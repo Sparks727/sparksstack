@@ -24,35 +24,35 @@ interface LocationState {
 const initialLocations: Location[] = [
   {
     id: '1',
-    name: 'Blue Sky Roofing - Main Office',
-    address: '2500 W Park Row Dr, Pantego, TX 76013',
-    phone: '(817) 769-2553',
+    name: 'Blue Sky Roofing - Sarasota',
+    address: '240 North Washington Boulevard Suite 318, Sarasota, Florida 34236',
+    phone: '(941) 877-1234',
     website: 'https://blueskyroofingtx.com',
     isConnected: true
   },
   {
     id: '2',
-    name: 'Blue Sky Roofing - Arlington',
-    address: '1801 N Collins St, Arlington, TX 76011',
-    phone: '(817) 769-2554',
-    website: 'https://arlington.blueskyroofingtx.com',
+    name: 'Blue Sky Roofing - Punta Gorda',
+    address: '6120 Sweden Blvd, Punta Gorda, FL 33982',
+    phone: '(941) 877-5678',
+    website: 'https://blueskyroofingtx.com',
     isConnected: true
   },
   {
     id: '3',
-    name: 'Blue Sky Roofing - Dallas',
-    address: '6060 N Central Expwy, Dallas, TX 75206',
-    phone: '(214) 347-7663',
-    website: 'https://dallas.blueskyroofingtx.com',
-    isConnected: false
+    name: 'Blue Sky Roofing - St. Petersburg',
+    address: '136 4th St N #2206, St. Petersburg, FL 33701',
+    phone: '(727) 555-1234',
+    website: 'https://blueskyroofingtx.com',
+    isConnected: true
   },
   {
     id: '4',
-    name: 'Blue Sky Roofing - Fort Worth',
-    address: '1612 Summit Ave, Fort Worth, TX 76102',
-    phone: '(817) 502-9119',
-    website: 'https://fortworth.blueskyroofingtx.com',
-    isConnected: false
+    name: 'Blue Sky Roofing - Largo',
+    address: '13375 Center Ave, Largo, FL 33773',
+    phone: '(727) 555-5678',
+    website: 'https://blueskyroofingtx.com',
+    isConnected: true
   }
 ];
 

@@ -2,45 +2,14 @@
 
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import Image from 'next/image';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+import { useState } from "react";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle
 } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
+import { Button } from "@/components/ui/button";
 import { 
   Table, 
   TableBody, 
@@ -49,7 +18,31 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  ChevronDown, 
   ChevronLeft, 
   ChevronRight, 
   Edit, 
@@ -59,16 +52,7 @@ import {
   MapPin,
   Phone,
   Globe,
-  Clock,
-  Calendar,
-  ThumbsUp, 
-  Instagram,
-  Youtube,
-  Facebook,
-  MoreHorizontal,
-  Search,
-  Filter,
-  Plus
+  Calendar
 } from "lucide-react";
 
 // Define location type
@@ -374,6 +358,11 @@ export default function LocationsPage() {
                     <SelectItem value="other">Other Business Group</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline">Group settings</Button>
+                  <Button variant="outline">Create group</Button>
+                </div>
               </div>
               
               <div className="w-full md:w-auto flex flex-col gap-1">
@@ -391,8 +380,8 @@ export default function LocationsPage() {
                 <div className="flex justify-between items-center">
                   <CardTitle>Businesses</CardTitle>
                   <div className="flex gap-2">
-                    <Select>
-                      <SelectTrigger className="w-[140px]">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder="Filter" />
                       </SelectTrigger>
                       <SelectContent>
@@ -401,7 +390,18 @@ export default function LocationsPage() {
                       </SelectContent>
                     </Select>
                     
-                    <Button>Add business</Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button>
+                          Add business
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>Add single business</DropdownMenuItem>
+                        <DropdownMenuItem>Import businesses</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
