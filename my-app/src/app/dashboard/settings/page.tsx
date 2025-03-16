@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { useLocationStore } from "@/lib/store/location-store";
 
@@ -22,26 +22,11 @@ export default function SettingsPage() {
   const [googleBusinessConnected, setGoogleBusinessConnected] = useState(activeLocation?.isConnected || false);
   const [googleAnalyticsConnected, setGoogleAnalyticsConnected] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
-  const [apiRefreshRate, setApiRefreshRate] = useState("24");
-
-  const [connectedMetrics, setConnectedMetrics] = useState({
-    profileViews: true,
-    searchAppearances: true,
-    customerActions: true,
-    reviews: true
-  });
 
   const toggleConnection = (service: 'google' | 'analytics' | 'facebook') => {
     if (service === 'google') setGoogleBusinessConnected(!googleBusinessConnected);
     if (service === 'analytics') setGoogleAnalyticsConnected(!googleAnalyticsConnected);
     if (service === 'facebook') setFacebookConnected(!facebookConnected);
-  };
-
-  const handleMetricToggle = (metric: keyof typeof connectedMetrics) => {
-    setConnectedMetrics({
-      ...connectedMetrics,
-      [metric]: !connectedMetrics[metric]
-    });
   };
 
   return (
@@ -128,129 +113,6 @@ export default function SettingsPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
-
-        {/* Metrics Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>API Configuration</CardTitle>
-            <CardDescription>Customize your API integration settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Google Business Profile API Settings */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Google Business Profile Metrics</h3>
-              <p className="text-sm text-muted-foreground">
-                Configure which metrics to fetch and display on your dashboard
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="metric-views" 
-                    className="rounded"
-                    checked={connectedMetrics.profileViews}
-                    onChange={() => handleMetricToggle('profileViews')}
-                  />
-                  <label htmlFor="metric-views" className="text-sm">Profile Views</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="metric-searches" 
-                    className="rounded"
-                    checked={connectedMetrics.searchAppearances}
-                    onChange={() => handleMetricToggle('searchAppearances')}
-                  />
-                  <label htmlFor="metric-searches" className="text-sm">Search Appearances</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="metric-actions" 
-                    className="rounded"
-                    checked={connectedMetrics.customerActions}
-                    onChange={() => handleMetricToggle('customerActions')}
-                  />
-                  <label htmlFor="metric-actions" className="text-sm">Customer Actions</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="metric-reviews" 
-                    className="rounded"
-                    checked={connectedMetrics.reviews}
-                    onChange={() => handleMetricToggle('reviews')}
-                  />
-                  <label htmlFor="metric-reviews" className="text-sm">Reviews</label>
-                </div>
-              </div>
-            </div>
-
-            {/* Data Refresh Rate */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Data Refresh Rate</h3>
-              <p className="text-sm text-muted-foreground">
-                How often to fetch new data from connected APIs
-              </p>
-              <select 
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                value={apiRefreshRate}
-                onChange={(e) => setApiRefreshRate(e.target.value)}
-              >
-                <option value="24">Every 24 hours</option>
-                <option value="12">Every 12 hours</option>
-                <option value="6">Every 6 hours</option>
-                <option value="1">Every hour</option>
-              </select>
-            </div>
-
-            {/* API Webhooks */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">API Webhook URL</h3>
-              <p className="text-sm text-muted-foreground">
-                Send real-time updates to this URL when data changes
-              </p>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  placeholder="https://yourdomain.com/api/webhook"
-                />
-                <Button variant="outline">Save</Button>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button className="w-full">Save Configuration</Button>
-          </CardFooter>
-        </Card>
-
-        {/* Account Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Location Information</CardTitle>
-            <CardDescription>Basic information about this business location</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium mb-1">Address</h3>
-                <p className="text-sm text-muted-foreground">{activeLocation.address}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium mb-1">Phone</h3>
-                <p className="text-sm text-muted-foreground">{activeLocation.phone}</p>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium mb-1">Website</h3>
-              <p className="text-sm text-muted-foreground">{activeLocation.website}</p>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" size="sm">Edit Location Details</Button>
-          </CardFooter>
         </Card>
       </div>
     </>
