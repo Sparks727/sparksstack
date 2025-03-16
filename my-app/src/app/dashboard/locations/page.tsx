@@ -189,6 +189,17 @@ export default function LocationsPage() {
   const [viewMode, setViewMode] = useState<"table" | "profile">("table");
   const [selectedLocation, setSelectedLocation] = useState<BusinessLocation | null>(null);
   
+  // New state for the new business form
+  const [newBusiness, setNewBusiness] = useState<Partial<BusinessLocation>>({
+    name: "",
+    address: "",
+    phone: "",
+    website: "",
+    hours: "Mon-Fri: 8AM-5PM",
+    category: "Roofing Contractor",
+    status: "Pending"
+  });
+  
   // Select all rows
   const selectAll = (checked: boolean) => {
     if (checked) {
@@ -317,6 +328,76 @@ export default function LocationsPage() {
     setSelectedLocation(null);
   };
 
+  // Add handlers for the Add Business dropdown menu items
+  const openAddSingleBusiness = () => {
+    setNewBusiness({
+      name: "",
+      address: "",
+      phone: "",
+      website: "",
+      hours: "Mon-Fri: 8AM-5PM",
+      category: "Roofing Contractor",
+      status: "Pending"
+    });
+    setOpenDialog("addBusiness");
+  };
+  
+  const openImportBusinesses = () => {
+    // This would be implemented to handle CSV/bulk import
+    console.log("Opening import businesses dialog");
+    alert("Bulk import functionality coming soon! This will allow you to import multiple locations from a CSV file.");
+  };
+  
+  // Add a function to handle the new business form submission
+  const handleAddBusiness = async () => {
+    if (!newBusiness.name || !newBusiness.address) {
+      alert("Business name and address are required!");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // This would call the Google Business Profile API to create a new location
+      console.log("Creating new business:", newBusiness);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Generate a random ID for the new business (In real implementation, this would come from the API)
+      const id = Math.random().toString(36).substring(2, 9);
+      
+      // In a real implementation, we would use the API response
+      const newLocation: BusinessLocation = {
+        id,
+        name: newBusiness.name || "",
+        address: newBusiness.address || "",
+        phone: newBusiness.phone || "",
+        website: newBusiness.website || "",
+        hours: newBusiness.hours || "Mon-Fri: 8AM-5PM",
+        category: newBusiness.category || "Roofing Contractor",
+        status: "Pending", // New businesses start as pending until verified
+        reviews: 0,
+        rating: 0
+      };
+      
+      // Add the new business to our local state
+      // In a real app, you'd fetch the updated list from the API
+      businessLocations.push(newLocation);
+      
+      // Show success message
+      alert("Business added successfully! It will be reviewed by Google before appearing in search results.");
+      
+      // Close the dialog
+      setOpenDialog(null);
+    } catch (error) {
+      console.error("Error adding business:", error);
+      alert("An error occurred while adding the business. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Protect this page - redirect if not authenticated (this is now handled by the layout)
   if (isLoaded && !user) {
     redirect("/");
@@ -393,8 +474,8 @@ export default function LocationsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem>Add single business</DropdownMenuItem>
-                        <DropdownMenuItem>Import businesses</DropdownMenuItem>
+                        <DropdownMenuItem onClick={openAddSingleBusiness}>Add single business</DropdownMenuItem>
+                        <DropdownMenuItem onClick={openImportBusinesses}>Import businesses</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -1535,6 +1616,123 @@ export default function LocationsPage() {
               disabled={isSubmitting || !postContent.trim()}
             >
               {isSubmitting ? "Posting..." : "Publish Post"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Business Dialog */}
+      <Dialog open={openDialog === "addBusiness"} onOpenChange={(open) => !open && setOpenDialog(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Business</DialogTitle>
+            <DialogDescription>
+              Add a new business location to your Google Business Profile
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="business-name">Business Name *</Label>
+              <Input 
+                id="business-name" 
+                value={newBusiness.name || ''} 
+                onChange={(e) => setNewBusiness({...newBusiness, name: e.target.value})}
+                placeholder="e.g. Blue Sky Roofing"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="business-category">Business Category *</Label>
+              <Select 
+                value={newBusiness.category || 'Roofing Contractor'} 
+                onValueChange={(value) => setNewBusiness({...newBusiness, category: value})}
+              >
+                <SelectTrigger id="business-category">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Roofing Contractor">Roofing Contractor</SelectItem>
+                  <SelectItem value="Roofing Service">Roofing Service</SelectItem>
+                  <SelectItem value="Construction Company">Construction Company</SelectItem>
+                  <SelectItem value="Home Improvement">Home Improvement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="business-address">Business Address *</Label>
+              <Textarea 
+                id="business-address"
+                value={newBusiness.address || ''} 
+                onChange={(e) => setNewBusiness({...newBusiness, address: e.target.value})}
+                placeholder="e.g. 240 North Washington Boulevard Suite 318, Sarasota, Florida 34236"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the full address including street, city, state, and zip code
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="business-phone">Phone Number</Label>
+                <Input 
+                  id="business-phone"
+                  value={newBusiness.phone || ''} 
+                  onChange={(e) => setNewBusiness({...newBusiness, phone: e.target.value})}
+                  placeholder="e.g. (941) 555-1234"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="business-website">Website</Label>
+                <Input 
+                  id="business-website"
+                  value={newBusiness.website || ''} 
+                  onChange={(e) => setNewBusiness({...newBusiness, website: e.target.value})}
+                  placeholder="e.g. https://blueskyroofing.com"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="business-hours">Business Hours</Label>
+              <Input 
+                id="business-hours"
+                value={newBusiness.hours || ''} 
+                onChange={(e) => setNewBusiness({...newBusiness, hours: e.target.value})}
+                placeholder="e.g. Mon-Fri: 8AM-5PM"
+              />
+              <p className="text-xs text-muted-foreground">
+                You can edit detailed hours after creating the business
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-md mt-4">
+              <h4 className="text-sm font-medium text-blue-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Google Verification
+              </h4>
+              <p className="text-xs text-blue-700 mt-1">
+                New business listings require verification from Google. After adding your business, 
+                you&apos;ll receive a verification code by mail, phone, or email depending on your business type.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenDialog(null)}>Cancel</Button>
+            <Button 
+              onClick={handleAddBusiness} 
+              disabled={isSubmitting || !newBusiness.name || !newBusiness.address}
+            >
+              {isSubmitting ? "Adding..." : "Add Business"}
             </Button>
           </DialogFooter>
         </DialogContent>
