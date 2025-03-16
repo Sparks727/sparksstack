@@ -36,7 +36,7 @@ export default function Sidebar() {
       {/* Logo and collapse button */}
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
-          <Link href="/dashboard" className="text-xl font-bold text-orange-500">
+          <Link href="/dashboard" className="text-xl font-bold text-blue-400">
             SparksStack
           </Link>
         )}
@@ -59,7 +59,7 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center px-4 py-2 ${
                     isActive 
-                      ? 'bg-orange-50 text-orange-600 font-medium' 
+                      ? 'bg-blue-50 text-blue-500 font-medium' 
                       : 'text-gray-600 hover:bg-gray-50'
                   } ${collapsed ? 'justify-center' : 'justify-start'}`}
                 >
