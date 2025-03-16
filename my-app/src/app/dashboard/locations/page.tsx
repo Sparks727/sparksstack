@@ -358,11 +358,6 @@ export default function LocationsPage() {
                     <SelectItem value="other">Other Business Group</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline">Group settings</Button>
-                  <Button variant="outline">Create group</Button>
-                </div>
               </div>
               
               <div className="w-full md:w-auto flex flex-col gap-1">
