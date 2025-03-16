@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useUser, SignInButton } from '@clerk/nextjs';
 
 export default function Home() {
@@ -8,16 +9,26 @@ export default function Home() {
   if (!isSignedIn) {
     return (
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-        <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-          <h1 className="text-4xl font-bold">
-            <span className="text-orange-500">Sparks</span>
-            <span>Stack</span>
-          </h1>
+        <main className="flex flex-col gap-[32px] row-start-2 items-center">
+          <Image
+            src="/SparksStackLogo.png"
+            alt="SparksStack Logo"
+            width={250}
+            height={80}
+            priority
+            className="mb-4"
+          />
           
-          <div className="flex gap-4 items-center flex-col sm:flex-row">
+          <div className="flex justify-center w-full mt-4">
             <SignInButton mode="modal">
-              <button className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto">
-                Onward
+              <button className="rounded-full border border-solid border-transparent 
+                px-8 py-3 text-base font-medium 
+                bg-gradient-to-r from-orange-500 to-red-600 text-white
+                transform transition-all duration-300 ease-in-out
+                hover:scale-105 hover:shadow-lg
+                focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50
+                active:scale-95">
+                Onward →
               </button>
             </SignInButton>
           </div>
@@ -28,11 +39,15 @@ export default function Home() {
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <h1 className="text-4xl font-bold">
-          <span className="text-orange-500">Sparks</span>
-          <span>Stack</span>
-        </h1>
+      <main className="flex flex-col gap-[32px] row-start-2 items-center">
+        <Image
+          src="/SparksStackLogo.png"
+          alt="SparksStack Logo"
+          width={250}
+          height={80}
+          priority
+          className="mb-4"
+        />
         <h2 className="text-2xl font-bold">Welcome, {user?.firstName || 'User'}!</h2>
         <p className="text-lg">You are successfully signed in.</p>
         
