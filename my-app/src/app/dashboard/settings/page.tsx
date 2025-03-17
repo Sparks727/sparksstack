@@ -4,26 +4,105 @@ import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocationStore } from "@/lib/store/location-store";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser();
   const { locations, activeLocationId } = useLocationStore();
   
-  // Protect this page - redirect if not authenticated
-  if (isLoaded && !user) {
-    redirect("/");
-  }
-
+  // New state for connection status
+  const [connectionStatus, setConnectionStatus] = useState({
+    connected: false,
+    hasRequiredScopes: false,
+    loading: true,
+    error: null as string | null
+  });
+  
   // Find the active location
   const activeLocation = locations.find(loc => loc.id === activeLocationId) || locations[0];
 
   const [googleBusinessConnected, setGoogleBusinessConnected] = useState(activeLocation?.isConnected || false);
   const [googleAnalyticsConnected, setGoogleAnalyticsConnected] = useState(false);
 
-  const toggleConnection = (service: 'google' | 'analytics') => {
-    if (service === 'google') setGoogleBusinessConnected(!googleBusinessConnected);
+  // Protect this page - redirect if not authenticated
+  if (isLoaded && !user) {
+    redirect("/");
+  }
+
+  // Check connection status on component mount
+  useEffect(() => {
+    async function checkGoogleConnection() {
+      try {
+        const response = await fetch('/api/google/business');
+        
+        if (!response.ok) {
+          throw new Error('Failed to check Google connection status');
+        }
+        
+        const data = await response.json();
+        setConnectionStatus({
+          connected: data.connected,
+          hasRequiredScopes: data.hasRequiredScopes,
+          loading: false,
+          error: null
+        });
+        
+        // Update the UI state based on the connection
+        if (data.connected && data.hasRequiredScopes) {
+          setGoogleBusinessConnected(true);
+        }
+      } catch (error) {
+        setConnectionStatus({
+          connected: false,
+          hasRequiredScopes: false,
+          loading: false,
+          error: 'Failed to check connection status'
+        });
+      }
+    }
+    
+    checkGoogleConnection();
+  }, []);
+
+  const toggleConnection = async (service: 'google' | 'analytics') => {
+    if (service === 'google') {
+      if (googleBusinessConnected) {
+        // Handle disconnection - In a real app you would make an API call to revoke access
+        setGoogleBusinessConnected(false);
+        toast({
+          title: "Disconnected",
+          description: "Google Business Profile disconnected successfully."
+        });
+      } else {
+        // For connection, we'll use Clerk's OAuth
+        if (user) {
+          try {
+            // This would typically be handled by Clerk's OAuth flow
+            // For demonstration, we're showing a toast
+            toast({
+              title: "Connecting...",
+              description: "Redirecting to Google authentication..."
+            });
+            
+            // In a production app, you would trigger Clerk's OAuth flow here
+            // window.location.href = '/api/auth/authorize/google?scope=business.manage';
+          } catch (error) {
+            console.error('Error connecting to Google:', error);
+            toast({
+              title: "Connection Failed",
+              description: "There was an error connecting to Google Business Profile.",
+              variant: "destructive"
+            });
+          }
+        }
+      }
+    }
+    
     if (service === 'analytics') setGoogleAnalyticsConnected(!googleAnalyticsConnected);
   };
 
@@ -58,14 +137,33 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Sync your business metrics and reviews</p>
                 </div>
               </div>
-              <Button 
-                onClick={() => toggleConnection('google')} 
-                variant={googleBusinessConnected ? "destructive" : "default"}
-                className={googleBusinessConnected ? "" : "bg-[#4285F4] hover:bg-[#3367d6]"}
-              >
-                {googleBusinessConnected ? "Disconnect" : "Connect"}
-              </Button>
+              {connectionStatus.loading ? (
+                <Button disabled>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Checking...
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => toggleConnection('google')} 
+                  variant={googleBusinessConnected ? "destructive" : "default"}
+                  className={googleBusinessConnected ? "" : "bg-[#4285F4] hover:bg-[#3367d6]"}
+                >
+                  {googleBusinessConnected ? "Disconnect" : "Connect"}
+                </Button>
+              )}
             </div>
+
+            {/* Show alert if connected but missing required scopes */}
+            {connectionStatus.connected && !connectionStatus.hasRequiredScopes && !connectionStatus.loading && (
+              <Alert variant="warning" className="mb-4">
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>Missing permissions</AlertTitle>
+                <AlertDescription>
+                  Your Google account is connected, but it's missing the required permissions for managing your Google Business Profile. 
+                  Please disconnect and reconnect to grant the necessary permissions.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Google Analytics */}
             <div className="flex items-center justify-between">
