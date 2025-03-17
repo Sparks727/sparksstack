@@ -226,6 +226,25 @@ export default function GoogleBusinessClient() {
               }));
             }
           }
+        } else {
+          // No accounts found as owner, try to get locations with manager access
+          console.log("No accounts found as owner, trying to get locations with manager access...");
+          try {
+            const accessibleLocationsResponse = await googleBusinessService.getAccessibleLocations();
+            console.log("Accessible locations response:", accessibleLocationsResponse);
+            if (accessibleLocationsResponse?.locations) {
+              locations = accessibleLocationsResponse.locations;
+            }
+          } catch (error) {
+            console.error("Error fetching accessible locations:", error);
+            setGoogleBusinessData(prev => ({
+              ...prev,
+              debugInfo: {
+                ...prev.debugInfo,
+                locationsError: error instanceof Error ? error.message : String(error)
+              }
+            }));
+          }
         }
         
         setGoogleBusinessData({
@@ -354,22 +373,27 @@ export default function GoogleBusinessClient() {
     );
   }
 
-  if (googleBusinessData.accounts.length === 0) {
+  if (googleBusinessData.accounts.length === 0 && googleBusinessData.locations.length === 0) {
     return (
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-        <h3 className="font-medium">No Google Business Accounts Found</h3>
+        <h3 className="font-medium">No Google Business Accounts or Locations Found</h3>
         <p>
-          We couldn&apos;t find any Google Business Profile accounts associated with your Google account.
-          Please make sure you have at least one business account set up in Google Business Profile Manager.
+          We couldn&apos;t find any Google Business Profile accounts or locations associated with your Google account.
+          This can happen if:
         </p>
         
+        <ul className="list-disc pl-5 mt-2 mb-3 text-sm">
+          <li><strong>You don&apos;t have ownership</strong> of any Google Business Profiles (owner access provides the most complete API access)</li>
+          <li><strong>You only have manager access</strong> but not to any specific locations</li>
+          <li><strong>You haven&apos;t set up</strong> a Google Business Profile yet</li>
+        </ul>
+        
         <div className="mt-4 text-sm">
-          <p className="mb-2">To create a Google Business Profile:</p>
+          <p className="mb-2">To resolve this issue, you can:</p>
           <ol className="list-decimal pl-5 space-y-1">
-            <li>Go to <a href="https://business.google.com/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a></li>
-            <li>Sign in with your Google account (<code className="bg-gray-100 px-1">{user?.primaryEmailAddress?.emailAddress}</code>)</li>
-            <li>Follow the steps to create a business profile</li>
-            <li>Once created, come back and refresh this page</li>
+            <li>Use a Google account that has <strong>owner-level access</strong> to at least one Google Business Profile</li>
+            <li>Ask the owner to grant you manager access to specific locations, not just the account</li>
+            <li>Create your own Google Business Profile at <a href="https://business.google.com/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a></li>
           </ol>
         </div>
         

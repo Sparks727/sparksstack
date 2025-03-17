@@ -208,6 +208,55 @@ export class GoogleBusinessService {
   }
   
   /**
+   * Get locations the user has access to without requiring account ownership
+   * This is useful for manager access where the user doesn't own the business
+   * @returns A list of locations the user has access to
+   */
+  async getAccessibleLocations() {
+    const token = await this.getAccessToken();
+    if (!token) {
+      throw new Error('No Google access token available');
+    }
+    
+    try {
+      console.log('Making API request to get accessible locations:', `${this.baseUrl}/locations`);
+      console.log('Authorization header (first 15 chars):', `Bearer ${token.substring(0, 15)}...`);
+      
+      const response = await fetch(`${this.baseUrl}/locations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('API response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        // Add more detailed error logging
+        if (response.status === 403) {
+          console.error('403 Forbidden: This typically means the API is not enabled in your Google Cloud Project');
+        } else if (response.status === 401) {
+          console.error('401 Unauthorized: This typically means token issues or insufficient permissions');
+        } else if (response.status === 404) {
+          console.error('404 Not Found: This endpoint may be incorrect or the API might have changed');
+        }
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Accessible locations API response data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching accessible locations:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Helper method to get the Google access token
    * @returns The Google access token or null if not available
    */

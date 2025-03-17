@@ -114,6 +114,11 @@ export default function GoogleBusinessDebug() {
         status: 'checking'
       },
       {
+        name: 'My Business Account Management API (Locations)',
+        endpoint: 'https://mybusinessaccountmanagement.googleapis.com/v1/locations',
+        status: 'checking'
+      },
+      {
         name: 'Business Profile API',
         endpoint: 'https://businessprofileperformance.googleapis.com/v1/locations',
         status: 'checking'
