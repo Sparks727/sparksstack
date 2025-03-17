@@ -388,6 +388,28 @@ export default function GoogleBusinessClient() {
           <li><strong>You haven&apos;t set up</strong> a Google Business Profile yet</li>
         </ul>
         
+        <div className="mt-4 p-3 bg-white rounded border">
+          <h4 className="font-medium mb-2">For Agencies & Business Managers</h4>
+          <p className="text-sm mb-2">
+            As an agency or business manager, you need specific access to work with client Business Profiles:
+          </p>
+          <ol className="list-decimal pl-5 text-sm space-y-1">
+            <li>Have each client add your Google account as a <strong>Location Manager</strong> to their specific business locations (not just account-level access)</li>
+            <li>They can do this through their <a href="https://business.google.com/locations" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a> by:
+              <ul className="list-disc pl-5 mt-1 mb-1">
+                <li>Selecting a location</li>
+                <li>Going to &quot;Users&quot; or &quot;Access&quot;</li>
+                <li>Adding your email as a Manager or Owner</li>
+              </ul>
+            </li>
+            <li>Ensure your Google account is the same one used to log in to this application</li>
+            <li>For best API support, request <strong>Location Manager</strong> access to specific locations rather than just Account Manager access</li>
+          </ol>
+          <p className="text-sm mt-2">
+            <a href="https://developers.google.com/my-business/content/access-management-api-access" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Read more about access levels in Google&apos;s documentation</a>
+          </p>
+        </div>
+        
         <div className="mt-4 text-sm">
           <p className="mb-2">To resolve this issue, you can:</p>
           <ol className="list-decimal pl-5 space-y-1">

@@ -136,13 +136,30 @@ export default function GoogleBusinessDebug() {
     ]);
     
     try {
+      console.log('Starting Google APIs status check...');
+      
       // Get token
-      const token = await getToken({ template: 'oauth_google' });
-      if (!token) {
+      let token = null;
+      try {
+        token = await getToken({ template: 'oauth_google' });
+        console.log('Token obtained for API check:', token ? `${token.substring(0, 10)}...` : 'No token');
+      } catch (tokenError) {
+        console.error('Failed to get token for API check:', tokenError);
         setApiStatus(prev => prev.map(api => ({
           ...api,
           status: 'error',
-          details: 'No token available'
+          details: `Token error: ${tokenError instanceof Error ? tokenError.message : String(tokenError)}`
+        })));
+        setCheckingApis(false);
+        return;
+      }
+      
+      if (!token) {
+        console.error('No token available for API checks');
+        setApiStatus(prev => prev.map(api => ({
+          ...api,
+          status: 'error',
+          details: 'No token available. Please connect your Google account with the required permissions.'
         })));
         setCheckingApis(false);
         return;
@@ -150,13 +167,22 @@ export default function GoogleBusinessDebug() {
       
       // Check each API in parallel
       const checkPromises = apiStatus.map(async (api) => {
+        console.log(`Checking API: ${api.name} at ${api.endpoint}`);
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+          
           const response = await fetch(api.endpoint, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
-            }
+            },
+            signal: controller.signal
           });
+          
+          clearTimeout(timeoutId);
+          
+          console.log(`API ${api.name} response:`, response.status, response.statusText);
           
           let status: 'enabled' | 'disabled' | 'error' = 'disabled';
           let details = `Status code: ${response.status}`;
@@ -171,34 +197,68 @@ export default function GoogleBusinessDebug() {
             status = 'error';
             details = 'Authentication failed - token might be invalid';
           } else if (response.status === 404) {
-            // 404 on some endpoints is normal if you don't have data yet
+            // For some endpoints, 404 is expected when you don't have data
             status = 'enabled';
-            details = 'API seems enabled, but endpoint may require specific parameters';
+            details = 'API seems enabled, but no data found or endpoint requires specific parameters';
           } else {
             // Try to get more details from the error response
+            let responseText = '';
             try {
-              const errorText = await response.text();
-              details = `${details} - ${errorText.substring(0, 100)}...`;
+              responseText = await response.text();
             } catch {
-              // If we can't get the error text, just use the status
+              responseText = 'Could not read response body';
+            }
+            
+            console.log(`API ${api.name} error details:`, responseText);
+            details = `${details} - ${responseText.substring(0, 200)}...`;
+            
+            // Check for common error messages
+            if (responseText.includes('API not enabled')) {
+              status = 'disabled';
+              details = 'API is not enabled in your Google Cloud Project';
+            } else if (responseText.includes('permission') || responseText.includes('Permission')) {
+              status = 'error';
+              details = 'Permission denied - you may not have the required access level';
             }
           }
           
           return { ...api, status, details };
         } catch (error) {
+          console.error(`Error checking API ${api.name}:`, error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          let errorDetails = 'Unknown error';
+          
+          if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+            errorDetails = 'Request timed out after 10 seconds';
+          } else if (errorMessage.includes('network')) {
+            errorDetails = 'Network error - check your internet connection';
+          } else {
+            errorDetails = errorMessage;
+          }
+          
           return {
             ...api,
             status: 'error' as const,
-            details: error instanceof Error ? error.message : String(error)
+            details: errorDetails
           };
         }
       });
       
-      const results = await Promise.all(checkPromises);
-      setApiStatus(results as ApiStatus[]);
+      try {
+        const results = await Promise.all(checkPromises);
+        console.log('All API checks completed:', results);
+        setApiStatus(results as ApiStatus[]);
+      } catch (promiseError) {
+        console.error('Error in Promise.all for API checks:', promiseError);
+        setApiStatus(prev => prev.map(api => ({
+          ...api,
+          status: 'error' as const,
+          details: 'Failed to complete API check'
+        })));
+      }
       
     } catch (error) {
-      console.error('Error checking APIs:', error);
+      console.error('Error in main API checking function:', error);
       setApiStatus(prev => prev.map(api => ({
         ...api,
         status: 'error' as const,
@@ -263,7 +323,7 @@ export default function GoogleBusinessDebug() {
                   </span>
                 </div>
                 {api.details && (
-                  <p className="text-xs text-gray-500 mt-1 ml-5">{api.details}</p>
+                  <p className="text-xs text-gray-500 mt-1 ml-5 break-words">{api.details}</p>
                 )}
                 <p className="text-xs text-gray-400 mt-1 ml-5">{api.endpoint}</p>
               </div>
@@ -283,6 +343,26 @@ export default function GoogleBusinessDebug() {
           </div>
         </div>
       )}
+      
+      {/* Simple API Checker for direct testing */}
+      <div className="mt-6 p-4 bg-white rounded border">
+        <h4 className="font-medium mb-2">Direct API Testing</h4>
+        <p className="text-sm mb-4">
+          Test each API endpoint directly. This can help diagnose issues with the API Status Checker.
+        </p>
+        
+        <SimpleAPIChecker 
+          name="Test Locations Access (Manager Access)" 
+          endpoint="https://mybusinessaccountmanagement.googleapis.com/v1/locations" 
+          getToken={getToken}
+        />
+        
+        <SimpleAPIChecker 
+          name="Test Accounts Access (Owner Access)" 
+          endpoint="https://mybusinessaccountmanagement.googleapis.com/v1/accounts" 
+          getToken={getToken}
+        />
+      </div>
       
       {Object.keys(debugInfo).length > 0 && (
         <div className="bg-white p-3 rounded border text-xs font-mono">
@@ -321,6 +401,138 @@ export default function GoogleBusinessDebug() {
           <li>Make sure your Google Cloud project has the Business Profile API enabled</li>
         </ol>
       </div>
+    </div>
+  );
+}
+
+// Simple API Checker component for direct testing
+function SimpleAPIChecker({ 
+  name, 
+  endpoint, 
+  getToken 
+}: { 
+  name: string; 
+  endpoint: string; 
+  getToken: (args?: { template: string }) => Promise<string | null>; 
+}) {
+  const [result, setResult] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    message: string;
+    details?: string;
+  }>({
+    status: 'idle',
+    message: 'Not tested yet'
+  });
+
+  const testEndpoint = async () => {
+    setResult({
+      status: 'loading',
+      message: 'Testing API...'
+    });
+
+    try {
+      // Get token
+      const token = await getToken({ template: 'oauth_google' });
+      
+      if (!token) {
+        setResult({
+          status: 'error',
+          message: 'Failed to get token',
+          details: 'Make sure your Google account is connected with the required permissions'
+        });
+        return;
+      }
+
+      // Make request with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Get response text for more details
+      let responseText = '';
+      try {
+        responseText = await response.text();
+      } catch {
+        responseText = 'Could not read response body';
+      }
+      
+      // Handle response based on status
+      if (response.ok) {
+        setResult({
+          status: 'success',
+          message: `Success (${response.status})`,
+          details: responseText.substring(0, 300) + (responseText.length > 300 ? '...' : '')
+        });
+      } else if (response.status === 404) {
+        setResult({
+          status: 'success',
+          message: `API available but no data found (${response.status})`,
+          details: responseText.substring(0, 300) + (responseText.length > 300 ? '...' : '')
+        });
+      } else if (response.status === 403) {
+        setResult({
+          status: 'error',
+          message: `API not enabled (${response.status})`,
+          details: responseText.substring(0, 300) + (responseText.length > 300 ? '...' : '')
+        });
+      } else {
+        setResult({
+          status: 'error',
+          message: `Error: ${response.status} ${response.statusText}`,
+          details: responseText.substring(0, 300) + (responseText.length > 300 ? '...' : '')
+        });
+      }
+    } catch (error) {
+      setResult({
+        status: 'error',
+        message: 'Error testing API',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
+  return (
+    <div className="mb-4 p-3 border rounded">
+      <div className="flex justify-between items-center mb-2">
+        <h5 className="font-medium">{name}</h5>
+        <Button 
+          variant="outline" 
+          size="sm"
+          disabled={result.status === 'loading'}
+          onClick={testEndpoint}
+        >
+          {result.status === 'loading' ? (
+            <>
+              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              Testing...
+            </>
+          ) : 'Test Now'}
+        </Button>
+      </div>
+      
+      <div className="text-xs text-gray-500">{endpoint}</div>
+      
+      {result.status !== 'idle' && (
+        <div className={`mt-2 p-2 text-sm rounded ${
+          result.status === 'loading' ? 'bg-gray-100' :
+          result.status === 'success' ? 'bg-green-50 text-green-800' : 
+          'bg-red-50 text-red-800'
+        }`}>
+          <div className="font-medium">{result.message}</div>
+          {result.details && (
+            <pre className="mt-1 whitespace-pre-wrap text-xs overflow-auto max-h-32">{result.details}</pre>
+          )}
+        </div>
+      )}
     </div>
   );
 } 
