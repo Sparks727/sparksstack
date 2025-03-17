@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocationStore } from "@/lib/store/location-store";
 import GoogleBusinessClient from "./GoogleBusinessClient";
+import GoogleBusinessDebug from "./GoogleBusinessDebug";
 
 function RatingIcon() {
   return (
@@ -85,6 +86,14 @@ export default function ReviewsPage() {
           This data is fetched directly via the Google Business Profile API.
         </p>
         <GoogleBusinessClient />
+      </div>
+      
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Troubleshooting</h2>
+        <p className="text-muted-foreground">
+          Use the tools below to diagnose any issues with your Google Business Profile integration.
+        </p>
+        <GoogleBusinessDebug />
       </div>
 
       <div className="space-y-6">

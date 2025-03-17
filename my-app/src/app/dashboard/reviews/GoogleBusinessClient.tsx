@@ -36,6 +36,13 @@ interface GoogleBusinessData {
   reviews: GoogleBusinessReview[];
   isLoading: boolean;
   error: string | null;
+  debugInfo: {
+    hasToken: boolean;
+    tokenPrefix?: string;
+    accountsError?: string;
+    locationsError?: string;
+    reviewsError?: string;
+  };
 }
 
 export default function GoogleBusinessClient() {
@@ -46,22 +53,32 @@ export default function GoogleBusinessClient() {
     locations: [],
     reviews: [],
     isLoading: true,
-    error: null
+    error: null,
+    debugInfo: {
+      hasToken: false
+    }
   });
 
   useEffect(() => {
     async function fetchGoogleBusinessData() {
       try {
+        console.log("Attempting to fetch Google Business Profile data...");
+        
         // Get OAuth token from Clerk for Google
         // You need to set up a JWT template named 'oauth_google' in the Clerk dashboard
         // with the Google Business Profile API scope: https://www.googleapis.com/auth/business.manage
         const token = await getToken({ template: 'oauth_google' });
         
+        console.log("Token received:", token ? "Token found (first 10 chars): " + token.substring(0, 10) + "..." : "No token");
+        
         if (!token) {
           setGoogleBusinessData(prev => ({
             ...prev,
             isLoading: false,
-            error: 'No Google Business access token available. Please make sure your Google account is connected with Business Profile permissions in your account settings.'
+            error: 'No Google Business access token available. Please make sure your Google account is connected with Business Profile permissions in your account settings.',
+            debugInfo: {
+              hasToken: false
+            }
           }));
           return;
         }
@@ -69,22 +86,72 @@ export default function GoogleBusinessClient() {
         // Initialize service with token
         const googleBusinessService = new GoogleBusinessService(token);
         
+        // Update debug info with token status
+        setGoogleBusinessData(prev => ({
+          ...prev,
+          debugInfo: {
+            ...prev.debugInfo,
+            hasToken: true,
+            tokenPrefix: token.substring(0, 10) + "..."
+          }
+        }));
+        
         // Fetch accounts
-        const accountsResponse = await googleBusinessService.getAccounts();
-        const accounts = accountsResponse?.accounts || [];
+        console.log("Fetching Google Business accounts...");
+        let accounts: GoogleBusinessAccount[] = [];
+        try {
+          const accountsResponse = await googleBusinessService.getAccounts();
+          console.log("Accounts response:", accountsResponse);
+          accounts = accountsResponse?.accounts || [];
+        } catch (error) {
+          console.error("Error fetching accounts:", error);
+          setGoogleBusinessData(prev => ({
+            ...prev,
+            debugInfo: {
+              ...prev.debugInfo,
+              accountsError: error instanceof Error ? error.message : String(error)
+            }
+          }));
+        }
         
         // If we have accounts, fetch locations for the first account
         let locations: GoogleBusinessLocation[] = [];
         let reviews: GoogleBusinessReview[] = [];
         
         if (accounts.length > 0) {
-          const locationsResponse = await googleBusinessService.getLocations(accounts[0].name);
-          locations = locationsResponse?.locations || [];
+          console.log("Fetching locations for account:", accounts[0].name);
+          try {
+            const locationsResponse = await googleBusinessService.getLocations(accounts[0].name);
+            console.log("Locations response:", locationsResponse);
+            locations = locationsResponse?.locations || [];
+          } catch (error) {
+            console.error("Error fetching locations:", error);
+            setGoogleBusinessData(prev => ({
+              ...prev,
+              debugInfo: {
+                ...prev.debugInfo,
+                locationsError: error instanceof Error ? error.message : String(error)
+              }
+            }));
+          }
           
           // If we have locations, fetch reviews for the first location
           if (locations.length > 0) {
-            const reviewsResponse = await googleBusinessService.getReviews(locations[0].name);
-            reviews = reviewsResponse?.reviews || [];
+            console.log("Fetching reviews for location:", locations[0].name);
+            try {
+              const reviewsResponse = await googleBusinessService.getReviews(locations[0].name);
+              console.log("Reviews response:", reviewsResponse);
+              reviews = reviewsResponse?.reviews || [];
+            } catch (error) {
+              console.error("Error fetching reviews:", error);
+              setGoogleBusinessData(prev => ({
+                ...prev,
+                debugInfo: {
+                  ...prev.debugInfo,
+                  reviewsError: error instanceof Error ? error.message : String(error)
+                }
+              }));
+            }
           }
         }
         
@@ -93,7 +160,14 @@ export default function GoogleBusinessClient() {
           locations,
           reviews,
           isLoading: false,
-          error: null
+          error: null,
+          debugInfo: {
+            hasToken: true,
+            tokenPrefix: token.substring(0, 10) + "...",
+            accountsError: accounts.length === 0 ? "No accounts found" : undefined,
+            locationsError: accounts.length > 0 && locations.length === 0 ? "No locations found" : undefined,
+            reviewsError: locations.length > 0 && reviews.length === 0 ? "No reviews found" : undefined
+          }
         });
         
       } catch (error) {
@@ -101,7 +175,11 @@ export default function GoogleBusinessClient() {
         setGoogleBusinessData(prev => ({
           ...prev,
           isLoading: false,
-          error: error instanceof Error ? error.message : 'Unknown error occurred'
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+          debugInfo: {
+            ...prev.debugInfo,
+            accountsError: error instanceof Error ? error.message : String(error)
+          }
         }));
       }
     }
@@ -115,6 +193,16 @@ export default function GoogleBusinessClient() {
     return <div className="p-4 text-center">Loading Google Business Profile data...</div>;
   }
 
+  // Display debug information in development
+  const showDebugInfo = () => {
+    return (
+      <div className="mt-4 p-4 bg-gray-100 rounded-md text-xs font-mono">
+        <h4 className="font-medium mb-2">Debug Information</h4>
+        <pre>{JSON.stringify(googleBusinessData.debugInfo, null, 2)}</pre>
+      </div>
+    );
+  };
+
   if (googleBusinessData.error) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
@@ -123,6 +211,7 @@ export default function GoogleBusinessClient() {
         <p className="mt-2 text-sm">
           Please make sure you have connected your Google Business Profile account in your settings.
         </p>
+        {showDebugInfo()}
       </div>
     );
   }
@@ -135,6 +224,7 @@ export default function GoogleBusinessClient() {
           We couldn&apos;t find any Google Business Profile accounts associated with your Google account.
           Please make sure you have at least one business account set up in Google Business Profile Manager.
         </p>
+        {showDebugInfo()}
       </div>
     );
   }
@@ -184,6 +274,8 @@ export default function GoogleBusinessClient() {
             ))}
           </ul>
         </div>
+        
+        {showDebugInfo()}
       </div>
     </div>
   );
