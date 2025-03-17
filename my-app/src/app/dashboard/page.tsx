@@ -12,10 +12,20 @@ import {
   PopoverTrigger,
   PopoverContent
 } from "@/components/ui/popover";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { format, subDays, isAfter, parseISO, isBefore, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from 'react-day-picker';
 import { useState, useEffect, useRef } from 'react';
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 // Sample review trends data by month
 const reviewTrendsData = {
@@ -261,6 +271,66 @@ const sampleReviews = [
     replied: true,
     reply: "Thank you for the recommendation, Jennifer! We're proud to have met your commercial roofing needs.",
     location: "fortworth"
+  },
+  {
+    id: 13,
+    author: "Thomas Wilson",
+    rating: 5,
+    date: "2023-05-10",
+    content: "Exceptional service! I had a complex roofing issue that other companies wouldn't touch, but Blue Sky Roofing solved it perfectly.",
+    replied: true,
+    reply: "Thank you for your kind words, Thomas! We pride ourselves on tackling difficult projects that others might avoid.",
+    location: "main"
+  },
+  {
+    id: 14,
+    author: "Rebecca Lane",
+    rating: 4,
+    date: "2023-05-05",
+    content: "Great communication throughout the project. The team was always available to answer my questions and kept me updated on progress.",
+    replied: false,
+    reply: "",
+    location: "arlington"
+  },
+  {
+    id: 15,
+    author: "Daniel Garcia",
+    rating: 2,
+    date: "2023-04-30",
+    content: "The work was completed on time, but there were issues with cleanup afterward. Had to call them back to fix it.",
+    replied: true,
+    reply: "We apologize for the oversight with the cleanup, Daniel. We've implemented new quality control procedures to ensure this doesn't happen again.",
+    location: "dallas"
+  },
+  {
+    id: 16,
+    author: "Samantha Wright",
+    rating: 5,
+    date: "2023-04-25",
+    content: "I can't recommend Blue Sky Roofing enough! From the initial consultation to the final installation, everything was perfect.",
+    replied: true,
+    reply: "We're delighted to hear about your positive experience, Samantha! Thank you for the recommendation.",
+    location: "fortworth"
+  },
+  {
+    id: 17,
+    author: "Ethan Cooper",
+    rating: 3,
+    date: "2023-04-20",
+    content: "The roofing work was good quality, but the project took longer than initially quoted. Better time estimation would be appreciated.",
+    replied: false,
+    reply: "",
+    location: "main"
+  },
+  {
+    id: 18,
+    author: "Olivia Bennett",
+    rating: 5,
+    date: "2023-04-15",
+    content: "Blue Sky Roofing helped me with an emergency repair after a storm. They were quick to respond and fixed everything perfectly.",
+    replied: true,
+    reply: "We understand how stressful emergency situations can be, Olivia. We're glad we could help resolve your roofing emergency promptly!",
+    location: "arlington"
   }
 ];
 
@@ -304,9 +374,7 @@ const StatCard = ({ title, value, change, icon: Icon, trend, isLoading = false }
 
 function RatingIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-500">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
+    <StarIcon className="h-6 w-6 text-yellow-500 fill-yellow-500" />
   );
 }
 
@@ -838,20 +906,24 @@ export default function Dashboard() {
           {/* Search Input */}
           <div className="mb-6">
             <div className="relative">
-              <input
+              <Input
                 type="text"
                 placeholder="Search reviews by content or author..."
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               {searchQuery && (
-                <button 
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-muted-foreground"
                   onClick={() => setSearchQuery("")}
                 >
-                  ✕
-                </button>
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Clear search</span>
+                </Button>
               )}
             </div>
           </div>
@@ -898,7 +970,7 @@ export default function Dashboard() {
                       <h3 className="font-medium">{location.name}</h3>
                       <div className="flex items-center mt-1">
                         <span className="font-medium mr-1">{locStats.rating}</span>
-                        <RatingIcon />
+                        <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         <span className="text-xs text-gray-500 ml-1">({locStats.totalReviews} reviews)</span>
                       </div>
                       <div className="flex justify-between items-center mt-2">
@@ -940,78 +1012,75 @@ export default function Dashboard() {
       )}
       
       {/* Reply Dialog */}
-      {replyDialogOpen && currentReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-4">
-                Reply to {currentReview.author}&apos;s Review
-              </h3>
-              
-              <div className="mb-6 p-4 bg-gray-50 rounded-md">
-                <div className="flex items-center mb-2">
-                  <div className="font-medium">{currentReview.author}</div>
-                  <div className="ml-2 flex items-center">
+      <Dialog open={replyDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setReplyDialogOpen(false);
+          setCurrentReview(null);
+          setReplyText("");
+        }
+      }}>
+        {currentReview && (
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Reply to {currentReview.author}&apos;s Review</DialogTitle>
+            </DialogHeader>
+            
+            <div className="mb-6 p-4 bg-gray-50 rounded-md">
+              <div className="flex items-center mb-2">
+                <div className="font-medium">{currentReview.author}</div>
+                <div className="ml-2 flex items-center">
+                  <div className="flex space-x-0.5">
                     {[...Array(5)].map((_, i) => (
-                      <svg 
+                      <StarIcon 
                         key={i}
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 24 24" 
-                        fill={i < currentReview.rating ? "currentColor" : "none"}
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        className={i < currentReview.rating ? "text-yellow-500" : "text-gray-300"}
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
+                        className={`h-4 w-4 ${i < currentReview.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                      />
                     ))}
-                    <span className="ml-2 text-sm text-gray-500">{currentReview.date}</span>
                   </div>
+                  <span className="ml-2 text-sm text-gray-500">{currentReview.date}</span>
                 </div>
-                <p className="text-sm">{currentReview.content}</p>
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Reply
-                </label>
-                <textarea
-                  id="reply"
-                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={5}
-                  placeholder="Type your reply here..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                ></textarea>
-                <p className="text-xs text-gray-500 mt-1">
-                  Your reply will be public and visible to anyone who can see this review on Google.
-                </p>
-              </div>
-              
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setReplyDialogOpen(false);
-                    setCurrentReview(null);
-                    setReplyText("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmitReply}
-                  disabled={isSubmittingReply || !replyText.trim()}
-                >
-                  {isSubmittingReply ? "Submitting..." : "Submit Reply"}
-                </Button>
-              </div>
+              <p className="text-sm">{currentReview.content}</p>
             </div>
-          </div>
-        </div>
-      )}
+            
+            <div className="mb-4">
+              <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">
+                Your Reply
+              </label>
+              <Textarea
+                id="reply"
+                className="resize-none"
+                rows={5}
+                placeholder="Type your reply here..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              ></Textarea>
+              <p className="text-xs text-gray-500 mt-1">
+                Your reply will be public and visible to anyone who can see this review on Google.
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReplyDialogOpen(false);
+                  setCurrentReview(null);
+                  setReplyText("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitReply}
+                disabled={isSubmittingReply || !replyText.trim()}
+              >
+                {isSubmittingReply ? "Submitting..." : "Submit Reply"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   );
 }
@@ -1035,49 +1104,44 @@ function renderReviews(
     <>
       <div className="space-y-6">
         {reviews.map((review) => (
-          <div key={review.id} className="border-b border-gray-200 dark:border-gray-800 pb-6 last:border-b-0 last:pb-0">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="font-medium">{review.author}</div>
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <svg 
-                      key={i}
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill={i < review.rating ? "currentColor" : "none"}
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      className={i < review.rating ? "text-yellow-500" : "text-gray-300"}
-                    >
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  ))}
-                  <span className="ml-2 text-sm text-muted-foreground">{review.date}</span>
+          <Card key={review.id} className="overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="font-medium">{review.author}</div>
+                  <div className="flex items-center">
+                    <div className="flex space-x-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <StarIcon 
+                          key={i}
+                          className={`h-4 w-4 ${i < review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm text-muted-foreground">{review.date}</span>
+                  </div>
+                </div>
+                <div>
+                  <Button 
+                    variant={review.replied ? "outline" : "default"} 
+                    size="sm"
+                    onClick={() => onReplyClick(review)}
+                  >
+                    {review.replied ? "View Reply" : "Reply"}
+                  </Button>
                 </div>
               </div>
-              <div>
-                <Button 
-                  variant={review.replied ? "outline" : "default"} 
-                  size="sm"
-                  onClick={() => onReplyClick(review)}
-                >
-                  {review.replied ? "View Reply" : "Reply"}
-                </Button>
-              </div>
-            </div>
-            <p className="text-sm">{review.content}</p>
-            
-            {/* Review Reply (if exists) */}
-            {review.replied && review.reply && (
-              <div className="mt-3 pl-4 border-l-2 border-blue-200">
-                <p className="text-xs font-semibold text-blue-600">Your response:</p>
-                <p className="text-sm text-gray-700 mt-1">{review.reply}</p>
-              </div>
-            )}
-          </div>
+              <p className="text-sm mt-3">{review.content}</p>
+              
+              {/* Review Reply (if exists) */}
+              {review.replied && review.reply && (
+                <div className="mt-4 pt-3 pl-4 border-l-2 border-blue-200 bg-blue-50/50 rounded-sm pb-3 pr-3">
+                  <p className="text-xs font-semibold text-blue-600">Your response:</p>
+                  <p className="text-sm text-gray-700 mt-1">{review.reply}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
       
