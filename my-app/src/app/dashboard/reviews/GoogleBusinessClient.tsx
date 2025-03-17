@@ -53,13 +53,15 @@ export default function GoogleBusinessClient() {
     async function fetchGoogleBusinessData() {
       try {
         // Get OAuth token from Clerk for Google
-        const token = await getToken({ template: 'google_business_profile' });
+        // You need to set up a JWT template named 'oauth_google' in the Clerk dashboard
+        // with the Google Business Profile API scope: https://www.googleapis.com/auth/business.manage
+        const token = await getToken({ template: 'oauth_google' });
         
         if (!token) {
           setGoogleBusinessData(prev => ({
             ...prev,
             isLoading: false,
-            error: 'No Google Business access token available. Please reconnect your Google account.'
+            error: 'No Google Business access token available. Please make sure your Google account is connected with Business Profile permissions in your account settings.'
           }));
           return;
         }
