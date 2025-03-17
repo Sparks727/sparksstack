@@ -142,73 +142,6 @@ export default function GoogleBusinessProfileTestPage() {
     }
   }
 
-  async function testPeopleApi() {
-    setApiTesting(true);
-    try {
-      const token = await getToken({ template: 'oauth_google' });
-      
-      if (!token) {
-        setDebugInfo(prev => ({
-          ...prev,
-          apiTest: {
-            success: false,
-            message: 'No OAuth token available',
-            error: 'Failed to get Google OAuth token'
-          }
-        }));
-        return;
-      }
-      
-      console.log('Testing People API with token (first 15 chars):', token.substring(0, 15) + '...');
-      
-      const response = await fetch('https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('People API response:', response.status, response.statusText);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDebugInfo(prev => ({
-          ...prev,
-          apiTest: {
-            success: true,
-            message: 'Successfully connected to Google People API',
-            details: data
-          }
-        }));
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setDebugInfo(prev => ({
-          ...prev,
-          apiTest: {
-            success: false,
-            status: response.status,
-            error: errorData.error?.message || 'Failed to connect to People API',
-            message: 'OAuth token validation failed with People API',
-            details: errorData
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('People API test error:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setDebugInfo(prev => ({
-        ...prev,
-        apiTest: {
-          success: false,
-          message: 'Error testing People API connection',
-          error: errorMessage
-        }
-      }));
-    } finally {
-      setApiTesting(false);
-    }
-  }
-
   return (
     <div className="container mx-auto py-10">
       <Card>
@@ -239,14 +172,6 @@ export default function GoogleBusinessProfileTestPage() {
                   variant="outline"
                 >
                   {apiTesting ? 'Testing API...' : 'Test API Connection'}
-                </Button>
-                
-                <Button 
-                  onClick={testPeopleApi}
-                  disabled={apiTesting || !debugInfo.hasToken}
-                  variant="outline"
-                >
-                  {apiTesting ? 'Testing...' : 'Test People API'}
                 </Button>
               </div>
             </div>
@@ -312,7 +237,7 @@ export default function GoogleBusinessProfileTestPage() {
                 <li><strong>Make sure the Google Business Profile API is enabled in your Google Cloud Project:</strong>
                   <ul className="list-disc pl-5 mt-1 text-xs">
                     <li>Go to <a href="https://console.cloud.google.com/apis/library/businessprofileperformance.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console API Library</a></li>
-                    <li>Search for &quot;Business Profile API&quot; and &quot;My Business API&quot;</li>
+                    <li>Search for "Business Profile API" and "My Business API"</li>
                     <li>Enable both APIs for your project</li>
                   </ul>
                 </li>
