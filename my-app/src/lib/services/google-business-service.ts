@@ -1,5 +1,3 @@
-import { clerkClient, getAuth } from '@clerk/nextjs/server';
-
 /**
  * Google Business Profile API Service
  * This service handles interactions with the Google Business Profile API
@@ -132,32 +130,18 @@ export class GoogleBusinessService {
   }
   
   /**
-   * Helper method to get the Google access token from Clerk
+   * Helper method to get the Google access token
+   * In a real implementation, you would get this from your auth system
    * @returns The Google access token or null if not available
    */
   private async getAccessToken(): Promise<string | null> {
-    const auth = getAuth();
-    if (!auth?.userId) return null;
+    // For now, we'll use a mock token for testing
+    return null;
     
-    try {
-      // Get the user's OAuth tokens from Clerk
-      const userId = auth.userId;
-      const user = await clerkClient.users.getUser(userId);
-      
-      // Find the Google OAuth account
-      const googleAccount = user.externalAccounts.find(
-        account => account.provider === 'google'
-      );
-      
-      if (!googleAccount) {
-        console.error('No Google account connected');
-        return null;
-      }
-      
-      return googleAccount.accessToken || null;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      return null;
-    }
+    // In a real implementation, you would:
+    // 1. Get the user's ID from the session/cookies
+    // 2. Fetch the user's Google OAuth tokens from your database
+    // 3. Check if the token is expired and refresh if needed
+    // 4. Return the access token
   }
 } 
