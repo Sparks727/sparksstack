@@ -65,6 +65,59 @@ export default function GoogleBusinessClient() {
       try {
         console.log("Attempting to fetch Google Business Profile data...");
         
+        // Check if user has Google OAuth connection
+        const googleAccount = user?.externalAccounts?.find(
+          account => account.provider === 'google'
+        );
+
+        if (!googleAccount) {
+          setGoogleBusinessData(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'No Google account connected. Please connect your Google account in settings.',
+            debugInfo: {
+              ...prev.debugInfo,
+              hasToken: false
+            }
+          }));
+          return;
+        }
+
+        // Process scopes that might be in different formats
+        let formattedScopes: string[] = [];
+        if (googleAccount?.approvedScopes) {
+          // If it's already an array, use it
+          if (Array.isArray(googleAccount.approvedScopes)) {
+            // Each array element might still contain multiple space-separated scopes
+            formattedScopes = googleAccount.approvedScopes.flatMap(scope => 
+              typeof scope === 'string' ? scope.split(' ') : [scope]
+            );
+          } 
+          // If it's a string, split by spaces
+          else if (typeof googleAccount.approvedScopes === 'string') {
+            formattedScopes = googleAccount.approvedScopes.split(' ');
+          }
+        }
+        
+        // Check if business.manage scope is present
+        const hasBusinessManageScope = formattedScopes.some(scope => 
+          scope === 'https://www.googleapis.com/auth/business.manage'
+        );
+
+        if (!hasBusinessManageScope) {
+          setGoogleBusinessData(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'Missing required Google Business Profile permissions. Please disconnect and reconnect your Google account to grant the necessary permissions.',
+            debugInfo: {
+              ...prev.debugInfo,
+              hasToken: false,
+              accountsError: 'Missing business.manage scope'
+            }
+          }));
+          return;
+        }
+        
         // Get OAuth token from Clerk for Google
         // You need to set up a JWT template named 'oauth_google' in the Clerk dashboard
         // with the Google Business Profile API scope: https://www.googleapis.com/auth/business.manage
@@ -225,10 +278,24 @@ export default function GoogleBusinessClient() {
 
   if (googleBusinessData.error) {
     const isVerificationError = googleBusinessData.debugInfo.oauthError?.includes('access_denied');
+    const isScopeError = googleBusinessData.debugInfo.accountsError === 'Missing business.manage scope';
     
     return (
-      <div className={`p-4 ${isVerificationError ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'} rounded-md ${isVerificationError ? 'text-yellow-800' : 'text-red-700'}`}>
-        <h3 className="font-medium">{isVerificationError ? 'Google Verification Required' : 'Error Connecting to Google Business Profile'}</h3>
+      <div className={`p-4 ${
+        isVerificationError 
+          ? 'bg-yellow-50 border border-yellow-200 text-yellow-800' 
+          : isScopeError
+            ? 'bg-amber-50 border border-amber-200 text-amber-800'
+            : 'bg-red-50 border border-red-200 text-red-700'
+      } rounded-md`}>
+        <h3 className="font-medium">
+          {isVerificationError 
+            ? 'Google Verification Required' 
+            : isScopeError
+              ? 'Missing Google Business Profile Permissions'
+              : 'Error Connecting to Google Business Profile'
+          }
+        </h3>
         <p>{googleBusinessData.error}</p>
         
         {isVerificationError ? (
@@ -241,6 +308,16 @@ export default function GoogleBusinessClient() {
               <li>In the &quot;Test users&quot; section, click &quot;Add Users&quot;</li>
               <li>Add your Google email address</li>
               <li>Save changes and try connecting again</li>
+            </ol>
+          </div>
+        ) : isScopeError ? (
+          <div className="mt-4 text-sm">
+            <p className="mb-2">You need to reconnect your Google account with the correct permissions:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Go to your <a href="/dashboard/settings" className="text-blue-600 underline">Account Settings</a></li>
+              <li>Under &quot;Google Business Profile&quot;, click &quot;Disconnect&quot;</li>
+              <li>Then click &quot;Connect&quot; to sign in again</li>
+              <li>Make sure to check the box that allows access to &quot;View and manage your Google Business Profile&quot; when prompted for permissions</li>
             </ol>
           </div>
         ) : (

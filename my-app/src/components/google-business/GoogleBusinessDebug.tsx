@@ -9,6 +9,7 @@ interface DebugInfo {
   googleAccountId?: string | null;
   googleAccountEmail?: string | null;
   googleAccountScopes?: string[] | null;
+  originalScopes?: string[] | string | null;
   hasBusinessManageScope?: boolean;
   hasToken?: boolean;
   tokenPrefix?: string | null;
@@ -46,21 +47,35 @@ export default function GoogleBusinessDebug() {
       // Get raw user token to check claims
       const rawToken = await getToken();
       
+      // Handle scopes that might be a space-separated string or an array
+      let formattedScopes: string[] = [];
+      if (googleAccount?.approvedScopes) {
+        // If it's already an array, use it
+        if (Array.isArray(googleAccount.approvedScopes)) {
+          // Each array element might still contain multiple space-separated scopes
+          formattedScopes = googleAccount.approvedScopes.flatMap(scope => 
+            typeof scope === 'string' ? scope.split(' ') : [scope]
+          );
+        } 
+        // If it's a string, split by spaces
+        else if (typeof googleAccount.approvedScopes === 'string') {
+          formattedScopes = googleAccount.approvedScopes.split(' ');
+        }
+      }
+      
+      // Check if business.manage scope is present
+      const hasBusinessManageScope = formattedScopes.some(scope => 
+        scope === 'https://www.googleapis.com/auth/business.manage'
+      );
+      
       // Set debug info
       setDebugInfo({
         hasGoogleConnection: !!googleAccount,
         googleAccountId: googleAccount?.id || null,
         googleAccountEmail: googleAccount?.emailAddress || null,
-        googleAccountScopes: googleAccount?.approvedScopes 
-          ? Array.isArray(googleAccount.approvedScopes) 
-            ? googleAccount.approvedScopes 
-            : [googleAccount.approvedScopes]
-          : null,
-        hasBusinessManageScope: googleAccount?.approvedScopes
-          ? Array.isArray(googleAccount.approvedScopes)
-            ? googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage')
-            : googleAccount.approvedScopes === 'https://www.googleapis.com/auth/business.manage'
-          : false,
+        googleAccountScopes: formattedScopes,
+        originalScopes: googleAccount?.approvedScopes,
+        hasBusinessManageScope,
         hasToken: !!token,
         tokenPrefix: token ? `${token.substring(0, 10)}...` : null,
         rawTokenPrefix: rawToken ? `${rawToken.substring(0, 10)}...` : null,
