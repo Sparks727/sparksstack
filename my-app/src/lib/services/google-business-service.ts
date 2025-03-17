@@ -10,13 +10,17 @@ export class GoogleBusinessService {
   private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
   private readonly mapsUrl = 'https://maps.googleapis.com/maps/api';
   private accessToken: string | null = null;
+  private apiKey: string | null = null;
   
   /**
    * Constructor that can accept an access token directly
    */
-  constructor(accessToken?: string) {
+  constructor(accessToken?: string, apiKey?: string) {
     if (accessToken) {
       this.accessToken = accessToken;
+    }
+    if (apiKey) {
+      this.apiKey = apiKey;
     }
   }
   
@@ -39,6 +43,48 @@ export class GoogleBusinessService {
       
       // Log token details for debugging (only first few chars)
       console.log('Using token (first 15 chars):', token.substring(0, 15) + '...');
+      console.log('Token length:', token.length);
+      
+      // Check if token appears to be in JWT format (rough check)
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        console.warn('Token does not appear to be in standard JWT format (expected 3 parts separated by dots)');
+      } else {
+        try {
+          // Decode the payload (middle part) to check claims
+          const payloadBase64 = tokenParts[1];
+          // Add padding if needed
+          const padding = '='.repeat((4 - payloadBase64.length % 4) % 4);
+          const base64 = (payloadBase64 + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+          
+          const jsonPayload = decodeURIComponent(atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join(''));
+          
+          const payload = JSON.parse(jsonPayload);
+          console.log('Token payload:', payload);
+          
+          // Check for critical fields
+          if (payload.exp) {
+            const expiryDate = new Date(payload.exp * 1000);
+            const now = new Date();
+            console.log('Token expires:', expiryDate.toISOString());
+            console.log('Token expired:', expiryDate < now);
+          }
+          
+          // Check for scope
+          if (payload.scope) {
+            console.log('Token scopes:', payload.scope);
+            const hasBusinessScope = payload.scope.includes('business.manage');
+            console.log('Has business.manage scope:', hasBusinessScope);
+          }
+        } catch (e) {
+          console.warn('Failed to decode token payload:', e);
+        }
+      }
       
       // First, try a simpler Google API to test if the token is valid at all
       // The People API is commonly accessible and a good test
