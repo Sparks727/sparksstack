@@ -16,6 +16,7 @@ interface DebugInfo {
   userId?: string | null;
   primaryEmail?: string | null;
   error?: string;
+  oauthError?: string | null;
 }
 
 export default function GoogleBusinessDebug() {
@@ -33,7 +34,14 @@ export default function GoogleBusinessDebug() {
       );
 
       // Get OAuth token from Clerk for Google
-      const token = await getToken({ template: 'oauth_google' });
+      let token = null;
+      let oauthError = null;
+      try {
+        token = await getToken({ template: 'oauth_google' });
+      } catch (error: Error | unknown) {
+        console.error('OAuth token error:', error);
+        oauthError = error instanceof Error ? error.message : String(error);
+      }
       
       // Get raw user token to check claims
       const rawToken = await getToken();
@@ -58,6 +66,7 @@ export default function GoogleBusinessDebug() {
         rawTokenPrefix: rawToken ? `${rawToken.substring(0, 10)}...` : null,
         userId: user?.id || null,
         primaryEmail: user?.primaryEmailAddress?.emailAddress || null,
+        oauthError: oauthError
       });
     } catch (error) {
       console.error('Error checking Google connection:', error);
@@ -85,6 +94,27 @@ export default function GoogleBusinessDebug() {
       {Object.keys(debugInfo).length > 0 && (
         <div className="bg-white p-3 rounded border text-xs font-mono">
           <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+        </div>
+      )}
+      
+      {/* OAuth verification error helper */}
+      {debugInfo.oauthError?.includes('access_denied') && (
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <h4 className="font-medium text-yellow-800 mb-2">Google Verification Issue Detected</h4>
+          <p className="text-sm mb-2">
+            Your Google Cloud Project is in testing mode and your Google account hasn&apos;t been added as a test user.
+          </p>
+          <div className="pl-4 text-sm">
+            <h5 className="font-medium mb-1">To fix this:</h5>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console</a></li>
+              <li>Select your project</li>
+              <li>Navigate to &quot;APIs &amp; Services&quot; &gt; &quot;OAuth consent screen&quot;</li>
+              <li>In the &quot;Test users&quot; section, click &quot;Add Users&quot;</li>
+              <li>Add <code className="bg-gray-100 px-1">{debugInfo.primaryEmail || 'your-email@example.com'}</code></li>
+              <li>Save changes and try connecting again</li>
+            </ol>
+          </div>
         </div>
       )}
       

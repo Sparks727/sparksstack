@@ -42,6 +42,7 @@ interface GoogleBusinessData {
     accountsError?: string;
     locationsError?: string;
     reviewsError?: string;
+    oauthError?: string;
   };
 }
 
@@ -67,9 +68,28 @@ export default function GoogleBusinessClient() {
         // Get OAuth token from Clerk for Google
         // You need to set up a JWT template named 'oauth_google' in the Clerk dashboard
         // with the Google Business Profile API scope: https://www.googleapis.com/auth/business.manage
-        const token = await getToken({ template: 'oauth_google' });
-        
-        console.log("Token received:", token ? "Token found (first 10 chars): " + token.substring(0, 10) + "..." : "No token");
+        let token = null;
+        try {
+          token = await getToken({ template: 'oauth_google' });
+          console.log("Token received:", token ? "Token found (first 10 chars): " + token.substring(0, 10) + "..." : "No token");
+        } catch (tokenError: Error | unknown) {
+          console.error("Error getting token:", tokenError);
+          // Check for access_denied error which indicates Google verification issue
+          if ((tokenError as Error)?.message?.includes('access_denied') || 
+              tokenError?.toString().includes('access_denied')) {
+            setGoogleBusinessData(prev => ({
+              ...prev,
+              isLoading: false,
+              error: 'Access blocked: Your Google Cloud Project has not completed the verification process. During development, you need to add your Google account as a test user in the Google Cloud Console.',
+              debugInfo: {
+                ...prev.debugInfo,
+                hasToken: false,
+                oauthError: 'access_denied - Your Google account needs to be added as a test user'
+              }
+            }));
+            return;
+          }
+        }
         
         if (!token) {
           setGoogleBusinessData(prev => ({
@@ -204,13 +224,31 @@ export default function GoogleBusinessClient() {
   };
 
   if (googleBusinessData.error) {
+    const isVerificationError = googleBusinessData.debugInfo.oauthError?.includes('access_denied');
+    
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
-        <h3 className="font-medium">Error Connecting to Google Business Profile</h3>
+      <div className={`p-4 ${isVerificationError ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'} rounded-md ${isVerificationError ? 'text-yellow-800' : 'text-red-700'}`}>
+        <h3 className="font-medium">{isVerificationError ? 'Google Verification Required' : 'Error Connecting to Google Business Profile'}</h3>
         <p>{googleBusinessData.error}</p>
-        <p className="mt-2 text-sm">
-          Please make sure you have connected your Google Business Profile account in your settings.
-        </p>
+        
+        {isVerificationError ? (
+          <div className="mt-4 text-sm">
+            <p className="mb-2">You need to add your Google account as a test user in the Google Cloud Console:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console</a></li>
+              <li>Select your project</li>
+              <li>Navigate to &quot;APIs &amp; Services&quot; &gt; &quot;OAuth consent screen&quot;</li>
+              <li>In the &quot;Test users&quot; section, click &quot;Add Users&quot;</li>
+              <li>Add your Google email address</li>
+              <li>Save changes and try connecting again</li>
+            </ol>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm">
+            Please make sure you have connected your Google Business Profile account in your settings.
+          </p>
+        )}
+        
         {showDebugInfo()}
       </div>
     );
