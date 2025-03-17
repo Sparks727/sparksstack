@@ -6,7 +6,6 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 3
-const TOAST_REMOVE_DELAY = 1000 // The duration of the toast auto-removal timeout
 
 type ToasterToast = ToastProps & {
   id: string
@@ -53,8 +52,6 @@ type Action =
 interface State {
   toasts: ToasterToast[]
 }
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -144,7 +141,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },

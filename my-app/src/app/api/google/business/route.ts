@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs';
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * GET /api/google/business
@@ -7,15 +7,30 @@ import { currentUser } from '@clerk/nextjs';
  */
 export async function GET() {
   try {
-    const user = await currentUser();
+    const authObj = auth();
+    const userId = authObj.userId;
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Use Clerk's server-side auth() instead of currentUser()
+    const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Failed to get user data' }, { status: 500 });
+    }
+    
+    const userData = await res.json();
+    
     // Check if user has connected a Google account
-    const googleAccount = user.externalAccounts.find(
-      account => account.provider === 'google'
+    const googleAccount = userData.external_accounts?.find(
+      (account: { provider: string }) => account.provider === 'google'
     );
     
     if (!googleAccount) {
@@ -26,7 +41,7 @@ export async function GET() {
     }
     
     // Check if we have the right scopes
-    const hasBusinessManageScope = googleAccount.approvedScopes?.includes(
+    const hasBusinessManageScope = googleAccount.approved_scopes?.includes(
       'https://www.googleapis.com/auth/business.manage'
     );
     
@@ -35,7 +50,7 @@ export async function GET() {
       hasRequiredScopes: !!hasBusinessManageScope,
       account: {
         provider: googleAccount.provider,
-        email: googleAccount.emailAddress
+        email: googleAccount.email_address
       }
     });
   } catch (error) {
@@ -48,27 +63,42 @@ export async function GET() {
  * POST /api/google/business/accounts
  * Get the user's Google Business Profile accounts
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const user = await currentUser();
+    const authObj = auth();
+    const userId = authObj.userId;
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Use Clerk's server-side auth() instead of currentUser()
+    const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Failed to get user data' }, { status: 500 });
+    }
+    
+    const userData = await res.json();
+    
     // Get the access token from the user's Google account
-    const googleAccount = user.externalAccounts.find(
-      account => account.provider === 'google'
+    const googleAccount = userData.external_accounts?.find(
+      (account: { provider: string }) => account.provider === 'google'
     );
     
-    if (!googleAccount || !googleAccount.accessToken) {
+    if (!googleAccount || !googleAccount.access_token) {
       return NextResponse.json({ error: 'Google account not connected' }, { status: 400 });
     }
     
     // Make a call to the Google Business Profile API
     const response = await fetch('https://mybusinessbusinessinformation.googleapis.com/v1/accounts', {
       headers: {
-        'Authorization': `Bearer ${googleAccount.accessToken}`,
+        'Authorization': `Bearer ${googleAccount.access_token}`,
         'Content-Type': 'application/json'
       }
     });

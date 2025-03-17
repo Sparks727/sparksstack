@@ -56,7 +56,8 @@ export default function SettingsPage() {
         if (data.connected && data.hasRequiredScopes) {
           setGoogleBusinessConnected(true);
         }
-      } catch (error) {
+      } catch (err) {
+        console.error('Connection error:', err);
         setConnectionStatus({
           connected: false,
           hasRequiredScopes: false,
@@ -91,8 +92,8 @@ export default function SettingsPage() {
             
             // In a production app, you would trigger Clerk's OAuth flow here
             // window.location.href = '/api/auth/authorize/google?scope=business.manage';
-          } catch (error) {
-            console.error('Error connecting to Google:', error);
+          } catch (err) {
+            console.error('Error connecting to Google:', err);
             toast({
               title: "Connection Failed",
               description: "There was an error connecting to Google Business Profile.",
@@ -155,11 +156,11 @@ export default function SettingsPage() {
 
             {/* Show alert if connected but missing required scopes */}
             {connectionStatus.connected && !connectionStatus.hasRequiredScopes && !connectionStatus.loading && (
-              <Alert variant="warning" className="mb-4">
+              <Alert variant="default" className="mb-4 bg-yellow-50 border-yellow-200">
                 <InfoIcon className="h-4 w-4" />
                 <AlertTitle>Missing permissions</AlertTitle>
                 <AlertDescription>
-                  Your Google account is connected, but it's missing the required permissions for managing your Google Business Profile. 
+                  Your Google account is connected, but it&apos;s missing the required permissions for managing your Google Business Profile. 
                   Please disconnect and reconnect to grant the necessary permissions.
                 </AlertDescription>
               </Alert>
