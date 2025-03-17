@@ -2,11 +2,18 @@
 
 import { useUser } from '@clerk/nextjs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ArrowUpIcon, ArrowDownIcon, StarIcon, MessageCircleIcon, MapPin, MessageSquareIcon, ThumbsUpIcon, ChevronDown } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, StarIcon, MessageCircleIcon, MapPin, MessageSquareIcon, ThumbsUpIcon, ChevronDown, CalendarIcon } from 'lucide-react';
 import { useLocationStore } from '@/lib/store/location-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { 
+  Popover,
+  PopoverTrigger,
+  PopoverContent
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, subDays, isAfter, parseISO, isBefore, startOfDay, endOfDay } from "date-fns";
 import { useState, useEffect, useRef } from 'react';
 
 // Sample review trends data by month
@@ -262,18 +269,29 @@ interface StatCardProps {
   change: string;
   icon: React.FC<{ size?: number; className?: string }>;
   trend: 'up' | 'down';
+  isLoading?: boolean;
 }
 
-// Stat card component
-const StatCard = ({ title, value, change, icon: Icon, trend }: StatCardProps) => (
+// Stat card component with loading state
+const StatCard = ({ title, value, change, icon: Icon, trend, isLoading = false }: StatCardProps) => (
   <div className="bg-white rounded-lg shadow p-6">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-semibold mt-1">{value}</p>
+        {isLoading ? (
+          <div className="h-8 w-16 mt-1 bg-gray-200 animate-pulse rounded"></div>
+        ) : (
+          <p className="text-2xl font-semibold mt-1">{value}</p>
+        )}
         <div className={`flex items-center mt-2 ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-          {trend === 'up' ? <ArrowUpIcon size={16} /> : <ArrowDownIcon size={16} />}
-          <span className="text-sm ml-1">{change}</span>
+          {isLoading ? (
+            <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+          ) : (
+            <>
+              {trend === 'up' ? <ArrowUpIcon size={16} /> : <ArrowDownIcon size={16} />}
+              <span className="text-sm ml-1">{change}</span>
+            </>
+          )}
         </div>
       </div>
       <div className="bg-blue-50 p-3 rounded-full">
@@ -306,6 +324,23 @@ export default function Dashboard() {
   const [currentReview, setCurrentReview] = useState<(typeof sampleReviews)[0] | null>(null);
   const [replyText, setReplyText] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  
+  // Date range states
+  const [dateRangeOpen, setDateRangeOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
+    from: subDays(new Date(), 30),
+    to: new Date()
+  });
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [reviewMetrics, setReviewMetrics] = useState({
+    rating: 0,
+    totalReviews: 0,
+    newReviews: 0,
+    responseRate: 0
+  });
   
   // Get active location or null for "All Locations"
   const activeLocation = activeLocationId 
@@ -359,19 +394,78 @@ export default function Dashboard() {
     setDropdownOpen(false);
   };
   
-  // Filter reviews based on active location and search query
-  useEffect(() => {
-    let filtered = sampleReviews;
+  // Function to fetch reviews data based on date range
+  const fetchReviewsData = async (from: Date, to: Date) => {
+    setIsLoadingData(true);
     
-    // Filter by location if an active location is selected
-    if (activeLocationId) {
+    try {
+      // This would be an actual API call to Google Business Profile API
+      // Simulating API call with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Filter reviews by date range
       const locationKey = 
         activeLocationId === '1' ? 'main' : 
         activeLocationId === '2' ? 'arlington' : 
-        activeLocationId === '3' ? 'dallas' : 'fortworth';
+        activeLocationId === '3' ? 'dallas' : 
+        activeLocationId === '4' ? 'fortworth' : null;
       
-      filtered = filtered.filter(review => review.location === locationKey);
+      // Filter all reviews by date and location (if applicable)
+      const filteredByDate = sampleReviews.filter(review => {
+        const reviewDate = parseISO(review.date);
+        const isInDateRange = isAfter(reviewDate, startOfDay(from)) && isBefore(reviewDate, endOfDay(to));
+        
+        if (locationKey) {
+          return review.location === locationKey && isInDateRange;
+        }
+        
+        return isInDateRange;
+      });
+      
+      // Calculate metrics from filtered reviews
+      let totalRating = 0;
+      filteredByDate.forEach(review => {
+        totalRating += review.rating;
+      });
+      
+      const averageRating = filteredByDate.length > 0 
+        ? (totalRating / filteredByDate.length).toFixed(1) 
+        : "0.0";
+      
+      const repliedCount = filteredByDate.filter(review => review.replied).length;
+      const responseRate = filteredByDate.length > 0 
+        ? Math.round((repliedCount / filteredByDate.length) * 100) 
+        : 0;
+      
+      // Update metrics
+      setReviewMetrics({
+        rating: parseFloat(averageRating),
+        totalReviews: filteredByDate.length,
+        newReviews: filteredByDate.length, // In real app, you'd calculate new reviews differently
+        responseRate: responseRate
+      });
+      
+      setFilteredReviews(filteredByDate);
+      setVisibleReviews(5); // Reset visible reviews when date changes
+      
+    } catch (error) {
+      console.error("Error fetching reviews data:", error);
+      // Error notification would go here
+    } finally {
+      setIsLoadingData(false);
     }
+  };
+  
+  // Apply date range when it changes
+  useEffect(() => {
+    if (dateRange.from && dateRange.to) {
+      fetchReviewsData(dateRange.from, dateRange.to);
+    }
+  }, [dateRange, activeLocationId]);
+  
+  // Filter reviews based on active location and search query
+  useEffect(() => {
+    let filtered = filteredReviews;
     
     // Filter by search query if one exists
     if (searchQuery.trim()) {
@@ -382,10 +476,13 @@ export default function Dashboard() {
       );
     }
     
-    setFilteredReviews(filtered);
-    // Reset visible reviews count when filter changes
-    setVisibleReviews(5);
-  }, [activeLocationId, searchQuery]);
+    // Only update if search query changes
+    if (searchQuery.trim()) {
+      setFilteredReviews(filtered);
+      // Reset visible reviews count when filter changes
+      setVisibleReviews(5);
+    }
+  }, [searchQuery]);
   
   // Get filtered reviews based on the active tab
   const getTabReviews = () => {
@@ -459,6 +556,11 @@ export default function Dashboard() {
     }
   };
   
+  // Format date range for display
+  const formattedDateRange = dateRange.from && dateRange.to
+    ? `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+    : "Select date range";
+  
   return (
     <>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
@@ -474,58 +576,141 @@ export default function Dashboard() {
           </p>
         </div>
         
-        {/* Location Switcher */}
-        <div className="relative mt-4 md:mt-0" ref={dropdownRef}>
-          <button 
-            className="flex items-center p-2 border rounded-md bg-white shadow-sm hover:bg-gray-50 transition-colors"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <div className="flex items-center">
-              <MapPin size={16} className="mr-1 text-blue-500" />
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">{activeLocation ? activeLocation.name : "All Locations"}</span>
-                {activeLocation && (
-                  <span className="text-xs text-gray-500 truncate max-w-[240px]">
-                    {activeLocation.address}
-                  </span>
-                )}
-              </div>
-              <ChevronDown size={16} className="ml-1" />
-            </div>
-          </button>
-          
-          {/* Dropdown */}
-          {dropdownOpen && (
-            <div className="absolute top-full right-0 mt-1 w-80 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
-              {/* All Locations option */}
-              <button
-                className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
-                onClick={() => handleLocationChange(null)}
+        <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0">
+          {/* Date Range Selector */}
+          <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="flex items-center justify-center gap-2"
+                disabled={isLoadingData}
               >
-                <div className="flex items-center">
-                  <MapPin size={16} className="mr-2 text-blue-500" />
-                  <span className="font-medium">All Locations</span>
+                <CalendarIcon size={16} />
+                <span>{formattedDateRange}</span>
+                {isLoadingData && (
+                  <div className="animate-spin ml-1 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange.from}
+                selected={{
+                  from: dateRange.from,
+                  to: dateRange.to,
+                }}
+                onSelect={(range: { from: Date; to: Date } | undefined) => {
+                  if (range?.from && range?.to) {
+                    setDateRange({
+                      from: range.from,
+                      to: range.to
+                    });
+                    setDateRangeOpen(false);
+                  }
+                }}
+                numberOfMonths={2}
+              />
+              <div className="p-3 border-t border-gray-200 flex justify-between">
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const today = new Date();
+                      setDateRange({
+                        from: subDays(today, 7),
+                        to: today
+                      });
+                    }}
+                  >
+                    Last 7 days
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const today = new Date();
+                      setDateRange({
+                        from: subDays(today, 30),
+                        to: today
+                      });
+                    }}
+                  >
+                    Last 30 days
+                  </Button>
                 </div>
-              </button>
-              
-              {/* Individual locations */}
-              {locations.map(location => (
-                <button
-                  key={location.id}
-                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
-                  onClick={() => handleLocationChange(location.id)}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const today = new Date();
+                    setDateRange({
+                      from: subDays(today, 90),
+                      to: today
+                    });
+                  }}
                 >
-                  <div className="flex">
-                    <MapPin size={16} className="mr-2 text-blue-500 flex-shrink-0 mt-1" />
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{location.name}</span>
-                      <span className="text-xs text-gray-500 truncate">{location.address}</span>
-                    </div>
+                  Last 90 days
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          {/* Location Switcher */}
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              className="flex items-center p-2 border rounded-md bg-white shadow-sm hover:bg-gray-50 transition-colors"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              <div className="flex items-center">
+                <MapPin size={16} className="mr-1 text-blue-500" />
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">{activeLocation ? activeLocation.name : "All Locations"}</span>
+                  {activeLocation && (
+                    <span className="text-xs text-gray-500 truncate max-w-[240px]">
+                      {activeLocation.address}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown size={16} className="ml-1" />
+              </div>
+            </button>
+            
+            {/* Dropdown */}
+            {dropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 w-80 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
+                {/* All Locations option */}
+                <button
+                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
+                  onClick={() => handleLocationChange(null)}
+                >
+                  <div className="flex items-center">
+                    <MapPin size={16} className="mr-2 text-blue-500" />
+                    <span className="font-medium">All Locations</span>
                   </div>
                 </button>
-              ))}
-            </div>
-          )}
+                
+                {/* Individual locations */}
+                {locations.map(location => (
+                  <button
+                    key={location.id}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
+                    onClick={() => handleLocationChange(location.id)}
+                  >
+                    <div className="flex">
+                      <MapPin size={16} className="mr-2 text-blue-500 flex-shrink-0 mt-1" />
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{location.name}</span>
+                        <span className="text-xs text-gray-500 truncate">{location.address}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -533,31 +718,35 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard 
           title="Overall Rating" 
-          value={stats.rating} 
+          value={reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} 
           change={stats.ratingChange} 
           icon={StarIcon} 
           trend={stats.ratingTrend} 
+          isLoading={isLoadingData}
         />
         <StatCard 
           title="Total Reviews" 
-          value={stats.totalReviews} 
-          change={stats.reviewChange} 
+          value={reviewMetrics.totalReviews ? reviewMetrics.totalReviews.toString() : stats.totalReviews} 
+          change={`${reviewMetrics.totalReviews} in selected period`} 
           icon={MessageSquareIcon} 
           trend={stats.totalReviewsTrend} 
+          isLoading={isLoadingData}
         />
         <StatCard 
-          title="New Reviews (30d)" 
-          value={stats.newReviews} 
-          change={stats.reviewChange} 
+          title="New Reviews" 
+          value={reviewMetrics.newReviews ? reviewMetrics.newReviews.toString() : stats.newReviews} 
+          change={`During ${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}`} 
           icon={MessageCircleIcon} 
           trend={stats.totalReviewsTrend} 
+          isLoading={isLoadingData}
         />
         <StatCard 
           title="Response Rate" 
-          value={stats.responseRate} 
+          value={reviewMetrics.responseRate ? `${reviewMetrics.responseRate}%` : stats.responseRate} 
           change={stats.responseRateChange} 
           icon={ThumbsUpIcon} 
           trend={stats.responseRateTrend} 
+          isLoading={isLoadingData}
         />
       </div>
 
@@ -573,7 +762,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row gap-8 items-center">
               <div className="flex flex-col items-center">
                 <div className="text-5xl font-bold flex items-center mb-2">
-                  {stats.rating} <RatingIcon />
+                  {reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} <RatingIcon />
                 </div>
                 <div className="text-sm text-muted-foreground">Overall Rating</div>
                 <div className="text-sm font-medium">Based on {distributionData.total} reviews</div>
