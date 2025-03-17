@@ -20,7 +20,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { format, subDays, isAfter, parseISO, isBefore, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, isAfter, parseISO, isBefore, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { DateRange } from 'react-day-picker';
 import { useState, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
@@ -465,6 +465,10 @@ export default function Dashboard() {
     setIsLoadingData(true);
     
     try {
+      // Make sure we start from the beginning of the "from" day and end at the end of the "to" day
+      const fromDate = startOfDay(from);
+      const toDate = endOfDay(to);
+      
       // This would be an actual API call to Google Business Profile API
       // Simulating API call with a delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -479,7 +483,11 @@ export default function Dashboard() {
       // Filter all reviews by date and location (if applicable)
       const filteredByDate = sampleReviews.filter(review => {
         const reviewDate = parseISO(review.date);
-        const isInDateRange = isAfter(reviewDate, startOfDay(from)) && isBefore(reviewDate, endOfDay(to));
+        
+        // Check if review is within date range using proper date comparison
+        const isInDateRange = 
+          (isAfter(reviewDate, fromDate) || isSameDay(reviewDate, fromDate)) && 
+          (isBefore(reviewDate, toDate) || isSameDay(reviewDate, toDate));
         
         if (locationKey) {
           return review.location === locationKey && isInDateRange;
@@ -524,10 +532,33 @@ export default function Dashboard() {
   
   // Apply date range when it changes
   useEffect(() => {
+    // Only fetch data when both dates are properly selected
     if (dateRange.from && dateRange.to) {
+      // Reset the view parameters before fetching new data
+      setVisibleReviews(5);
+      // Fetch the data
       fetchReviewsData(dateRange.from, dateRange.to);
     }
   }, [dateRange, activeLocationId]);
+  
+  // Make sure we handle the date range selection properly
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    if (!range) return;
+    
+    // If only the from date is selected, don't update the state yet
+    if (range.from && !range.to) {
+      setDateRange({ ...dateRange, from: range.from });
+      return;
+    }
+    
+    // When both dates are selected
+    if (range.from && range.to) {
+      // Set the full date range
+      setDateRange(range);
+      // Close the popover only when both dates are selected
+      setDateRangeOpen(false);
+    }
+  };
   
   // Filter reviews based on active location and search query
   useEffect(() => {
@@ -623,9 +654,21 @@ export default function Dashboard() {
   };
   
   // Format date range for display
-  const formattedDateRange = dateRange.from && dateRange.to
-    ? `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`
-    : "Select date range";
+  const formattedDateRange = () => {
+    if (!dateRange.from) {
+      return "Select date range";
+    }
+    
+    if (dateRange.from && !dateRange.to) {
+      return `From ${format(dateRange.from, 'MMM d, yyyy')}`;
+    }
+    
+    if (dateRange.from && dateRange.to) {
+      return `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`;
+    }
+    
+    return "Select date range";
+  };
   
   return (
     <>
@@ -652,7 +695,7 @@ export default function Dashboard() {
                 disabled={isLoadingData}
               >
                 <CalendarIcon size={16} />
-                <span>{formattedDateRange}</span>
+                <span>{formattedDateRange()}</span>
                 {isLoadingData && (
                   <div className="animate-spin ml-1 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
                 )}
@@ -664,12 +707,7 @@ export default function Dashboard() {
                 mode="range"
                 defaultMonth={dateRange.from}
                 selected={dateRange}
-                onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    setDateRange(range);
-                    setDateRangeOpen(false);
-                  }
-                }}
+                onSelect={handleDateRangeSelect}
                 numberOfMonths={2}
               />
               <div className="p-3 border-t border-gray-200 flex justify-between">
