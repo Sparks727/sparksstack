@@ -8,6 +8,7 @@ export class GoogleBusinessService {
   private readonly baseUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1';
   private readonly businessInfoUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
   private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
+  private readonly mapsUrl = 'https://maps.googleapis.com/maps/api';
   private accessToken: string | null = null;
   
   /**
@@ -36,49 +37,151 @@ export class GoogleBusinessService {
         throw new Error('No access token available');
       }
       
-      // Make a more robust request with better error handling
-      const response = await fetch(`${this.baseUrl}/accounts`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        // The next line is important for handling CORS in development and production
-        mode: 'cors',
-      });
+      // Log token details for debugging (only first few chars)
+      console.log('Using token (first 15 chars):', token.substring(0, 15) + '...');
       
-      // Handle specific error codes better
-      if (!response.ok) {
-        let errorMessage = '';
-        // Define a specific interface for the error data
-        let errorData: { error?: { message?: string } } = {};
+      // First, try a simpler Google API to test if the token is valid at all
+      // The People API is commonly accessible and a good test
+      try {
+        console.log('Testing token validity with People API');
+        const peopleResponse = await fetch('https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
-        try {
-          errorData = await response.json();
-          errorMessage = errorData.error?.message || response.statusText;
-        } catch {
-          // If the response is not JSON, use text instead
-          const errorText = await response.text().catch(() => 'Failed to parse error response');
-          errorMessage = errorText || response.statusText;
+        console.log('People API response:', peopleResponse.status, peopleResponse.statusText);
+        
+        if (!peopleResponse.ok) {
+          // If this fails, the token itself is likely invalid
+          const errorData = await peopleResponse.json().catch(() => ({}));
+          return {
+            success: false,
+            status: peopleResponse.status,
+            error: errorData.error?.message || 'Invalid OAuth token',
+            message: 'OAuth token validation failed. The token may be invalid or expired.',
+            details: {
+              ...errorData,
+              suggestion: "Try reconnecting your Google account in Clerk settings"
+            }
+          };
         }
         
-        // Return more detailed error information
+        console.log('Token is valid for People API');
+      } catch (peopleError) {
+        console.error('Error testing token with People API:', peopleError);
+      }
+      
+      // Try each Business Profile API endpoint
+      const endpoints = [
+        { url: `${this.baseUrl}/accounts`, name: 'accounts' },
+        { url: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts', name: 'accounts (direct)' },
+        { url: `${this.baseUrl}/accountsById`, name: 'accountsById' },
+        { url: 'https://mybusinessbusinessinformation.googleapis.com/v1/chains', name: 'chains' },
+        { url: 'https://businessprofileperformance.googleapis.com/v1/locations', name: 'businessPerformance' }
+      ];
+      
+      let lastError = null;
+      
+      // Try each endpoint
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Trying endpoint: ${endpoint.name} (${endpoint.url})`);
+          
+          const response = await fetch(endpoint.url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          console.log(`Response from ${endpoint.name}:`, response.status, response.statusText);
+          
+          if (response.ok) {
+            const data = await response.json();
+            return {
+              success: true,
+              data,
+              message: `Successfully connected to Google Business Profile API via ${endpoint.name} endpoint`,
+              endpointTested: endpoint.name
+            };
+          }
+          
+          // If not ok, store error for later
+          const errorData = await response.json().catch(() => ({}));
+          lastError = {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData.error?.message || errorData.error || response.statusText,
+            endpoint: endpoint.name,
+            details: errorData
+          };
+          
+          // Special case for 403 errors - may indicate permissions issue rather than auth issue
+          if (response.status === 403) {
+            return {
+              success: false,
+              status: response.status,
+              error: errorData.error?.message || 'Access forbidden. API may not be enabled or permissions not granted.',
+              message: `Failed to connect to Google Business Profile API (403 Forbidden). Please ensure the API is enabled in Google Cloud Console and your account has sufficient permissions.`,
+              details: {
+                ...errorData,
+                suggestedFix: "Enable the Google Business Profile API in your Google Cloud Console and ensure your Google account has access to manage business profiles."
+              }
+            };
+          }
+        } catch (endpointError) {
+          console.error(`Error testing ${endpoint.name} endpoint:`, endpointError);
+        }
+      }
+      
+      // Try a test with Maps API as a fallback
+      try {
+        console.log('Testing with Places API as fallback');
+        const mapsResponse = await fetch(`${this.mapsUrl}/place/details/json?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4&fields=name,rating&key=${token}`, {
+          method: 'GET'
+        });
+        
+        console.log('Maps API response:', mapsResponse.status, mapsResponse.statusText);
+        
+        if (mapsResponse.ok) {
+          console.log('Maps API connection successful');
+        }
+      } catch (mapsError) {
+        console.error('Error testing with Maps API:', mapsError);
+      }
+      
+      // If we got here, all endpoints failed
+      if (lastError) {
         return {
           success: false,
-          status: response.status,
-          error: errorMessage,
-          message: `Failed to connect to Google Business Profile API (${response.status}: ${errorMessage})`,
-          details: errorData
+          status: lastError.status,
+          error: lastError.error || 'Failed to connect to all API endpoints',
+          message: `Failed to connect to Google Business Profile API (${lastError.status}: ${lastError.error})`,
+          details: {
+            ...lastError.details,
+            testedEndpoints: endpoints.map(e => e.name),
+            suggestions: [
+              "Ensure the Google Business Profile API is enabled in your Google Cloud Console",
+              "Make sure to enable 'Business Profile Performance API', 'My Business API' and related APIs",
+              "Verify that your Google account has access to Google Business Profile",
+              "Check that the OAuth scope includes https://www.googleapis.com/auth/business.manage",
+              "Visit business.google.com to confirm you have access to business profiles",
+              "Verify that your Clerk JWT template is correctly configured"
+            ]
+          }
         };
       }
       
-      // Parse the successful response
-      const data = await response.json();
+      // Generic error if no specific error was captured
       return {
-        success: true,
-        data,
-        message: 'Successfully connected to Google Business Profile API'
+        success: false,
+        error: 'Failed to connect to all API endpoints',
+        message: 'Unable to establish connection with any Google Business Profile API endpoint',
+        isNetworkError: true
       };
     } catch (error) {
       console.error('Google Business API test error:', error);

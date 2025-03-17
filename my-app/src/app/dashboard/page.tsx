@@ -234,8 +234,20 @@ export default function GoogleBusinessProfileTestPage() {
                 <li>Verify your Google account is connected in your Clerk user settings</li>
                 <li>Ensure the OAuth scope <code>https://www.googleapis.com/auth/business.manage</code> is granted</li>
                 <li>Check that your Google account has access to Google Business Profile</li>
+                <li><strong>Make sure the Google Business Profile API is enabled in your Google Cloud Project:</strong>
+                  <ul className="list-disc pl-5 mt-1 text-xs">
+                    <li>Go to <a href="https://console.cloud.google.com/apis/library/businessprofileperformance.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console API Library</a></li>
+                    <li>Search for "Business Profile API" and "My Business API"</li>
+                    <li>Enable both APIs for your project</li>
+                  </ul>
+                </li>
+                <li><strong>Verify your Google account has proper access to Business Profiles:</strong>
+                  <ul className="list-disc pl-5 mt-1 text-xs">
+                    <li>Visit <a href="https://business.google.com/locations" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a></li>
+                    <li>Ensure you can access and manage business profiles</li>
+                  </ul>
+                </li>
                 <li>Verify your JWT template is correctly configured in Clerk</li>
-                <li>Make sure your Google Cloud project has the Business Profile API enabled</li>
               </ol>
             </div>
           </div>
