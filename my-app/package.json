@@ -8,6 +8,12 @@
     "start": "next start",
     "lint": "eslint ."
   },
+  "eslintConfig": {
+    "extends": "next/core-web-vitals",
+    "rules": {
+      "react/no-unescaped-entities": "off"
+    }
+  },
   "dependencies": {
     "@clerk/nextjs": "^6.12.5",
     "@radix-ui/react-avatar": "^1.1.3",
