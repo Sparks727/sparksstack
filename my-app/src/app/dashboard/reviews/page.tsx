@@ -5,14 +5,6 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocationStore } from "@/lib/store/location-store";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ReviewCard from "@/components/ReviewCard";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import GoogleBusinessClient from "./GoogleBusinessClient";
 
 function RatingIcon() {

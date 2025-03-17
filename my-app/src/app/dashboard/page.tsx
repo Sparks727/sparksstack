@@ -532,14 +532,10 @@ export default function Dashboard() {
   
   // Apply date range when it changes
   useEffect(() => {
-    // Only fetch data when both dates are properly selected
-    if (dateRange.from && dateRange.to) {
-      // Reset the view parameters before fetching new data
-      setVisibleReviews(5);
-      // Fetch the data
+    if (activeLocationId && dateRange.from && dateRange.to) {
       fetchReviewsData(dateRange.from, dateRange.to);
     }
-  }, [dateRange, activeLocationId]);
+  }, [dateRange, activeLocationId, fetchReviewsData]);
   
   // Make sure we handle the date range selection properly
   const handleDateRangeSelect = (range: DateRange | undefined) => {
@@ -579,7 +575,7 @@ export default function Dashboard() {
       // Reset visible reviews count when filter changes
       setVisibleReviews(5);
     }
-  }, [searchQuery]);
+  }, [searchQuery, filteredReviews]);
   
   // Get filtered reviews based on the active tab
   const getTabReviews = () => {
