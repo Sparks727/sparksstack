@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, subDays, isAfter, parseISO, isBefore, startOfDay, endOfDay } from "date-fns";
+import { DateRange } from 'react-day-picker';
 import { useState, useEffect, useRef } from 'react';
 
 // Sample review trends data by month
@@ -327,10 +328,7 @@ export default function Dashboard() {
   
   // Date range states
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
-  }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: new Date()
   });
@@ -597,16 +595,10 @@ export default function Dashboard() {
                 initialFocus
                 mode="range"
                 defaultMonth={dateRange.from}
-                selected={{
-                  from: dateRange.from,
-                  to: dateRange.to,
-                }}
-                onSelect={(range: { from: Date; to: Date } | undefined) => {
+                selected={dateRange}
+                onSelect={(range) => {
                   if (range?.from && range?.to) {
-                    setDateRange({
-                      from: range.from,
-                      to: range.to
-                    });
+                    setDateRange(range);
                     setDateRangeOpen(false);
                   }
                 }}
@@ -735,7 +727,7 @@ export default function Dashboard() {
         <StatCard 
           title="New Reviews" 
           value={reviewMetrics.newReviews ? reviewMetrics.newReviews.toString() : stats.newReviews} 
-          change={`During ${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}`} 
+          change={`During ${dateRange.from ? format(dateRange.from, 'MMM d') : ''} - ${dateRange.to ? format(dateRange.to, 'MMM d') : ''}`} 
           icon={MessageCircleIcon} 
           trend={stats.totalReviewsTrend} 
           isLoading={isLoadingData}
