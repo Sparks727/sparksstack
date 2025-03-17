@@ -15,21 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SparksStack | Google Business Profile Review Manager",
-  description: "Manage and monitor your Google Business Profile reviews, ratings, and locations all in one place. Boost your online reputation with SparksStack's review management platform.",
-  keywords: "Google Business Profile, Review Management, Business Reviews, GBP Management, Multi-location Management, Review Analytics",
+  title: "SparksStack | Google Business Profile API Test",
+  description: "Test your Google Business Profile API connectivity and OAuth integration.",
+  keywords: "Google Business Profile, API Testing, GBP Integration, OAuth2 Authentication",
   authors: [{ name: "SparksStack" }],
   openGraph: {
-    title: "SparksStack | Google Business Profile Review Manager",
-    description: "Manage and monitor your Google Business Profile reviews, ratings, and locations all in one place.",
+    title: "SparksStack | Google Business Profile API Test",
+    description: "Test your Google Business Profile API connectivity and OAuth integration.",
     url: "https://sparksstack.com",
     siteName: "SparksStack",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "SparksStack | Google Business Profile Review Manager",
-    description: "Manage and monitor your Google Business Profile reviews across multiple locations.",
+    title: "SparksStack | Google Business Profile API Test",
+    description: "Test your Google Business Profile API connectivity and OAuth integration.",
   },
 };
 

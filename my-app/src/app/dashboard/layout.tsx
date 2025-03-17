@@ -3,7 +3,6 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { redirect } from 'next/navigation';
-import DashboardLayout from './components/DashboardLayout';
 
 export default function DashboardPageLayout({
   children,
@@ -28,10 +27,10 @@ export default function DashboardPageLayout({
     );
   }
 
-  // Render the dashboard with the protected children and the new layout
+  // Render the dashboard with the protected children
   return (
-    <DashboardLayout>
+    <div className="min-h-screen bg-gray-50">
       {children}
-    </DashboardLayout>
+    </div>
   );
 } 

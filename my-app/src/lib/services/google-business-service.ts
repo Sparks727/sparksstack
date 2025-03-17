@@ -4,7 +4,7 @@
  * It uses the OAuth tokens obtained through Clerk's Google OAuth provider
  */
 export class GoogleBusinessService {
-  // Updated API endpoints to use the v4 API and proper format
+  // API endpoints to use the v4 API and proper format
   private readonly baseUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1';
   private readonly businessInfoUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
   private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
@@ -27,74 +27,71 @@ export class GoogleBusinessService {
   }
   
   /**
-   * Get the authenticated user's accounts
-   * @returns A list of Google Business Profile accounts
+   * Test API connection by attempting to get accounts
    */
-  async getAccounts() {
-    const token = await this.getAccessToken();
-    if (!token) {
-      throw new Error('No Google access token available');
-    }
-    
+  async testConnection() {
     try {
-      // First try getting accounts directly
-      console.log('Making API request to get accounts:', `${this.baseUrl}/accounts`);
-      console.log('Authorization header (first 15 chars):', `Bearer ${token.substring(0, 15)}...`);
+      const token = this.accessToken;
+      if (!token) {
+        throw new Error('No access token available');
+      }
       
-      let response = await fetch(`${this.baseUrl}/accounts`, {
+      const response = await fetch(`${this.baseUrl}/accounts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      console.log('API response status:', response.status, response.statusText);
-      
-      // If the first attempt fails, try using the /v1/accounts endpoint
-      if (!response.ok && response.status === 404) {
-        console.log('Trying alternative accounts endpoint: /v1/accounts');
-        response = await fetch(`https://mybusinessaccountmanagement.googleapis.com/v1/accounts`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Alternative API response status:', response.status, response.statusText);
-      }
-      
-      // If that also fails, try the accountsById endpoint which works differently
-      if (!response.ok && (response.status === 404 || response.status === 403)) {
-        console.log('Trying accountsById endpoint');
-        response = await fetch(`https://mybusinessaccountmanagement.googleapis.com/v1/accountsById`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('AccountsById API response status:', response.status, response.statusText);
-      }
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error response:', errorText);
-        
-        // Add more detailed error logging
-        if (response.status === 403) {
-          console.error('403 Forbidden: This typically means the API is not enabled in your Google Cloud Project');
-        } else if (response.status === 401) {
-          console.error('401 Unauthorized: This typically means token issues or insufficient permissions');
-        } else if (response.status === 404) {
-          console.error('404 Not Found: This endpoint may be incorrect or the API might have changed');
-        }
-        
-        throw new Error(`API error: ${response.status} - ${errorText}`);
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          status: response.status,
+          error: errorData.error || response.statusText,
+          message: 'Failed to connect to Google Business Profile API'
+        };
       }
       
       const data = await response.json();
-      console.log('Accounts API response data:', data);
-      return data;
+      return {
+        success: true,
+        data,
+        message: 'Successfully connected to Google Business Profile API'
+      };
     } catch (error) {
-      console.error('Error fetching business accounts:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        message: 'Error testing connection to Google Business Profile API'
+      };
+    }
+  }
+  
+  /**
+   * Get the authenticated user's accounts
+   */
+  async getAccounts() {
+    try {
+      const token = this.accessToken;
+      if (!token) {
+        throw new Error('No access token available');
+      }
+      
+      const response = await fetch(`${this.baseUrl}/accounts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
       throw error;
     }
   }
