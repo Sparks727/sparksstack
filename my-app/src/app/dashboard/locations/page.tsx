@@ -28,7 +28,6 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +53,7 @@ import {
   Globe,
   Calendar
 } from "lucide-react";
+import GoogleBusinessSection from "@/components/google-business/GoogleBusinessSection";
 
 // Define location type
 interface BusinessLocation {
@@ -406,56 +406,41 @@ export default function LocationsPage() {
   }
 
   return (
-    <>
-      {/* Header for location navigation */}
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold">
-          Locations
-        </h1>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Business Locations</h1>
+        <Button onClick={() => setOpenDialog("addBusiness")}>Add Location</Button>
       </div>
-
-      {/* Main content */}
-      <div className="space-y-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Business Group Header */}
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <div className="flex flex-col md:flex-row gap-4">
-              <Select defaultValue="blue-sky">
-                <SelectTrigger className="w-[300px]">
-                  <SelectValue placeholder="Select business group" />
+      
+      {/* Add Google Business Profile integration */}
+      <Tabs defaultValue="locations" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="locations">Locations</TabsTrigger>
+          <TabsTrigger value="google-business">Google Business Profile</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="locations" className="space-y-6">
+          {/* Existing locations content */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Filter" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="blue-sky">Blue Sky Roofing - OmniLocal</SelectItem>
-                  <SelectItem value="other">Other Business Group</SelectItem>
+                  <SelectItem value="all">All ({businessLocations.length})</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="w-full md:w-auto flex flex-col gap-1">
-              <div className="flex justify-between text-sm">
-                <span>{businessLocations.length} businesses</span>
-                <span>100% verified</span>
-              </div>
-              <Progress value={100} className="h-2 w-[250px]" />
-            </div>
           </div>
-
-          {/* Businesses Table Card */}
+          
+          {/* Rest of your existing locations table/content */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle>Businesses</CardTitle>
                 <div className="flex gap-2">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Filter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All ({businessLocations.length})</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button>
@@ -615,8 +600,16 @@ export default function LocationsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="google-business" className="space-y-6">
+          <GoogleBusinessSection 
+            title="Google Business Profile Locations" 
+            description="Manage your business locations directly from Google Business Profile" 
+            showDebug={true}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Profile Dialog */}
       <Dialog open={openDialog === "editProfile"} onOpenChange={(open) => !open && setOpenDialog(null)}>
@@ -1420,6 +1413,6 @@ export default function LocationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 } 

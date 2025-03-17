@@ -26,6 +26,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import GoogleBusinessSection from '@/components/google-business/GoogleBusinessSection';
 
 // Sample review trends data by month
 const reviewTrendsData = {
@@ -649,473 +650,391 @@ export default function Dashboard() {
     }
   };
   
-  // Format date range for display
-  const formattedDateRange = () => {
-    if (!dateRange.from) {
-      return "Select date range";
-    }
-    
-    if (dateRange.from && !dateRange.to) {
-      return `From ${format(dateRange.from, 'MMM d, yyyy')}`;
-    }
-    
-    if (dateRange.from && dateRange.to) {
-      return `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`;
-    }
-    
-    return "Select date range";
-  };
-  
   return (
-    <>
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Review Management Dashboard {user && `- Welcome, ${user.firstName || 'User'}`}
-          </h1>
-          
-          <p className="text-gray-600 mt-1">
-            {activeLocation 
-              ? `Managing reviews for ${activeLocation.name}`
-              : "Managing reviews for all locations"}
-          </p>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0">
-          {/* Date Range Selector */}
-          <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-center gap-2"
-                disabled={isLoadingData}
-              >
-                <CalendarIcon size={16} />
-                <span>{formattedDateRange()}</span>
-                {isLoadingData && (
-                  <div className="animate-spin ml-1 h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange.from}
-                selected={dateRange}
-                onSelect={handleDateRangeSelect}
-                numberOfMonths={2}
-              />
-              <div className="p-3 border-t border-gray-200 flex justify-between">
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      const today = new Date();
-                      setDateRange({
-                        from: subDays(today, 7),
-                        to: today
-                      });
-                    }}
-                  >
-                    Last 7 days
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      const today = new Date();
-                      setDateRange({
-                        from: subDays(today, 30),
-                        to: today
-                      });
-                    }}
-                  >
-                    Last 30 days
-                  </Button>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    const today = new Date();
-                    setDateRange({
-                      from: subDays(today, 90),
-                      to: today
-                    });
-                  }}
-                >
-                  Last 90 days
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          
-          {/* Location Switcher */}
-          <div className="relative" ref={dropdownRef}>
-            <button 
-              className="flex items-center p-2 border rounded-md bg-white shadow-sm hover:bg-gray-50 transition-colors"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              <div className="flex items-center">
-                <MapPin size={16} className="mr-1 text-blue-500" />
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">{activeLocation ? activeLocation.name : "All Locations"}</span>
-                  {activeLocation && (
-                    <span className="text-xs text-gray-500 truncate max-w-[240px]">
-                      {activeLocation.address}
-                    </span>
-                  )}
-                </div>
-                <ChevronDown size={16} className="ml-1" />
-              </div>
-            </button>
-            
-            {/* Dropdown */}
-            {dropdownOpen && (
-              <div className="absolute top-full right-0 mt-1 w-80 bg-white shadow-lg rounded-md overflow-hidden z-20 border">
-                {/* All Locations option */}
-                <button
-                  className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${!activeLocationId ? 'bg-orange-50 text-orange-600' : ''}`}
-                  onClick={() => handleLocationChange(null)}
-                >
-                  <div className="flex items-center">
-                    <MapPin size={16} className="mr-2 text-blue-500" />
-                    <span className="font-medium">All Locations</span>
-                  </div>
-                </button>
-                
-                {/* Individual locations */}
-                {locations.map(location => (
-                  <button
-                    key={location.id}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-100 ${activeLocationId === location.id ? 'bg-orange-50 text-orange-600' : ''}`}
-                    onClick={() => handleLocationChange(location.id)}
-                  >
-                    <div className="flex">
-                      <MapPin size={16} className="mr-2 text-blue-500 flex-shrink-0 mt-1" />
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">{location.name}</span>
-                        <span className="text-xs text-gray-500 truncate">{location.address}</span>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-6">
+        {/* Dashboard header with location selector */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            {user && (
+              <p className="text-gray-600 text-sm">Welcome, {user.firstName || 'User'}</p>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Review Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatCard 
-          title="Overall Rating" 
-          value={reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} 
-          change={stats.ratingChange} 
-          icon={StarIcon} 
-          trend={stats.ratingTrend} 
-          isLoading={isLoadingData}
-        />
-        <StatCard 
-          title="Total Reviews" 
-          value={reviewMetrics.totalReviews ? reviewMetrics.totalReviews.toString() : stats.totalReviews} 
-          change={`${reviewMetrics.totalReviews} in selected period`} 
-          icon={MessageSquareIcon} 
-          trend={stats.totalReviewsTrend} 
-          isLoading={isLoadingData}
-        />
-        <StatCard 
-          title="New Reviews" 
-          value={reviewMetrics.newReviews ? reviewMetrics.newReviews.toString() : stats.newReviews} 
-          change={`During ${dateRange.from ? format(dateRange.from, 'MMM d') : ''} - ${dateRange.to ? format(dateRange.to, 'MMM d') : ''}`} 
-          icon={MessageCircleIcon} 
-          trend={stats.totalReviewsTrend} 
-          isLoading={isLoadingData}
-        />
-        <StatCard 
-          title="Response Rate" 
-          value={reviewMetrics.responseRate ? `${reviewMetrics.responseRate}%` : stats.responseRate} 
-          change={stats.responseRateChange} 
-          icon={ThumbsUpIcon} 
-          trend={stats.responseRateTrend} 
-          isLoading={isLoadingData}
-        />
-      </div>
-
-      {/* Review Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Rating Distribution Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Rating Distribution</CardTitle>
-            <CardDescription>Customer ratings breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-8 items-center">
-              <div className="flex flex-col items-center">
-                <div className="text-5xl font-bold flex items-center mb-2">
-                  {reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} <RatingIcon />
-                </div>
-                <div className="text-sm text-muted-foreground">Overall Rating</div>
-                <div className="text-sm font-medium">Based on {distributionData.total} reviews</div>
-              </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={dropdownRef}>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <MapPin size={16} />
+                <span>{activeLocation ? activeLocation.name : "All Locations"}</span>
+                <ChevronDown size={16} />
+              </Button>
               
-              <div className="flex-1 space-y-2 min-w-[300px]">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">5 stars</span>
-                  <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[5]}%` }}></div>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 py-1">
+                  <div 
+                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center"
+                    onClick={() => handleLocationChange(null)}
+                  >
+                    All Locations
                   </div>
-                  <span className="text-sm">{distributionData[5]}%</span>
+                  {locations.map(location => (
+                    <div 
+                      key={location.id}
+                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center"
+                      onClick={() => handleLocationChange(location.id)}
+                    >
+                      {location.name}
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">4 stars</span>
-                  <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[4]}%` }}></div>
-                  </div>
-                  <span className="text-sm">{distributionData[4]}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">3 stars</span>
-                  <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[3]}%` }}></div>
-                  </div>
-                  <span className="text-sm">{distributionData[3]}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">2 stars</span>
-                  <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[2]}%` }}></div>
-                  </div>
-                  <span className="text-sm">{distributionData[2]}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">1 star</span>
-                  <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[1]}%` }}></div>
-                  </div>
-                  <span className="text-sm">{distributionData[1]}%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Review Trends Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Trends</CardTitle>
-            <CardDescription>Monthly review activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis yAxisId="left" orientation="left" />
-                  <YAxis yAxisId="right" orientation="right" domain={[0, 5]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="reviews" name="Reviews" stroke="#3b82f6" activeDot={{ r: 8 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="rating" name="Avg Rating" stroke="#f59e0b" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Reviews with Tabs */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Customer Reviews</CardTitle>
-            <CardDescription>Latest feedback from Google Business Profile</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search Input */}
-          <div className="mb-6">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search reviews by content or author..."
-                className="w-full pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              {searchQuery && (
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Clear search</span>
-                </Button>
               )}
             </div>
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-6">
-              <TabsTrigger value="all">All Reviews ({filteredReviews.length})</TabsTrigger>
-              <TabsTrigger value="negative">Negative Reviews ({filteredReviews.filter(r => r.rating <= 3).length})</TabsTrigger>
-              <TabsTrigger value="unreplied">Unreplied ({filteredReviews.filter(r => !r.replied).length})</TabsTrigger>
-            </TabsList>
             
-            <TabsContent value="all" className="space-y-4">
-              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
-            </TabsContent>
-            
-            <TabsContent value="negative" className="space-y-4">
-              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
-            </TabsContent>
-            
-            <TabsContent value="unreplied" className="space-y-4">
-              {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      
-      {/* Location List (only shown when viewing all locations) */}
-      {!activeLocation && locations.length > 0 && (
-        <div className="mt-6 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Your Locations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {locations.map(location => {
-              // Determine which location data to use
-              const locId = location.id;
-              const locStats = reviewStats[locId as keyof typeof reviewStats];
-              
-              return (
-                <div key={location.id} className="border rounded-md p-4 hover:border-blue-500 transition-colors">
-                  <div className="flex items-start">
-                    <div className="p-2 bg-blue-50 rounded-full mr-3">
-                      <MapPin size={18} className="text-blue-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{location.name}</h3>
-                      <div className="flex items-center mt-1">
-                        <span className="font-medium mr-1">{locStats.rating}</span>
-                        <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-xs text-gray-500 ml-1">({locStats.totalReviews} reviews)</span>
-                      </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <div className="text-sm">
-                          {location.isConnected ? (
-                            <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Connected</span>
-                          ) : (
-                            <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Not Connected</span>
-                          )}
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-xs"
-                          onClick={() => setActiveLocation(location.id)}
-                        >
-                          View Reviews
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Additional location review stats */}
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 pt-3 border-t">
-                    <div>
-                      <span className="block font-medium">New Reviews (30d):</span>
-                      {locStats.newReviews}
-                    </div>
-                    <div>
-                      <span className="block font-medium">Response Rate:</span>
-                      {locStats.responseRate}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {/* Date range selector */}
+            <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <CalendarIcon size={16} />
+                  {dateRange?.from && dateRange?.to ? (
+                    <span>
+                      {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d, yyyy")}
+                    </span>
+                  ) : (
+                    <span>Select date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={handleDateRangeSelect}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
-      )}
-      
-      {/* Reply Dialog */}
-      <Dialog open={replyDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setReplyDialogOpen(false);
-          setCurrentReview(null);
-          setReplyText("");
-        }
-      }}>
-        {currentReview && (
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Reply to {currentReview.author}&apos;s Review</DialogTitle>
-            </DialogHeader>
-            
-            <div className="mb-6 p-4 bg-gray-50 rounded-md">
-              <div className="flex items-center mb-2">
-                <div className="font-medium">{currentReview.author}</div>
-                <div className="ml-2 flex items-center">
-                  <div className="flex space-x-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <StarIcon 
-                        key={i}
-                        className={`h-4 w-4 ${i < currentReview.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
-                      />
-                    ))}
+        
+        {/* Google Business Profile Section - Add this at the top of the dashboard */}
+        <GoogleBusinessSection showDebug={true} />
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title="Overall Rating" 
+            value={reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} 
+            change={stats.ratingChange} 
+            icon={StarIcon} 
+            trend={stats.ratingTrend} 
+            isLoading={isLoadingData}
+          />
+          <StatCard 
+            title="Total Reviews" 
+            value={reviewMetrics.totalReviews ? reviewMetrics.totalReviews.toString() : stats.totalReviews} 
+            change={`${reviewMetrics.totalReviews} in selected period`} 
+            icon={MessageSquareIcon} 
+            trend={stats.totalReviewsTrend} 
+            isLoading={isLoadingData}
+          />
+          <StatCard 
+            title="New Reviews" 
+            value={reviewMetrics.newReviews ? reviewMetrics.newReviews.toString() : stats.newReviews} 
+            change={`During ${dateRange.from ? format(dateRange.from, 'MMM d') : ''} - ${dateRange.to ? format(dateRange.to, 'MMM d') : ''}`} 
+            icon={MessageCircleIcon} 
+            trend={stats.totalReviewsTrend} 
+            isLoading={isLoadingData}
+          />
+          <StatCard 
+            title="Response Rate" 
+            value={reviewMetrics.responseRate ? `${reviewMetrics.responseRate}%` : stats.responseRate} 
+            change={stats.responseRateChange} 
+            icon={ThumbsUpIcon} 
+            trend={stats.responseRateTrend} 
+            isLoading={isLoadingData}
+          />
+        </div>
+        
+        {/* Review Distribution */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Rating Distribution Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rating Distribution</CardTitle>
+              <CardDescription>Customer ratings breakdown</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-8 items-center">
+                <div className="flex flex-col items-center">
+                  <div className="text-5xl font-bold flex items-center mb-2">
+                    {reviewMetrics.rating ? reviewMetrics.rating.toString() : stats.rating} <RatingIcon />
                   </div>
-                  <span className="ml-2 text-sm text-gray-500">{currentReview.date}</span>
+                  <div className="text-sm text-muted-foreground">Overall Rating</div>
+                  <div className="text-sm font-medium">Based on {distributionData.total} reviews</div>
+                </div>
+                
+                <div className="flex-1 space-y-2 min-w-[300px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">5 stars</span>
+                    <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[5]}%` }}></div>
+                    </div>
+                    <span className="text-sm">{distributionData[5]}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">4 stars</span>
+                    <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[4]}%` }}></div>
+                    </div>
+                    <span className="text-sm">{distributionData[4]}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">3 stars</span>
+                    <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[3]}%` }}></div>
+                    </div>
+                    <span className="text-sm">{distributionData[3]}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">2 stars</span>
+                    <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[2]}%` }}></div>
+                    </div>
+                    <span className="text-sm">{distributionData[2]}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">1 star</span>
+                    <div className="w-2/3 h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${distributionData[1]}%` }}></div>
+                    </div>
+                    <span className="text-sm">{distributionData[1]}%</span>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm">{currentReview.content}</p>
+            </CardContent>
+          </Card>
+
+          {/* Review Trends Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Trends</CardTitle>
+              <CardDescription>Monthly review activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis yAxisId="left" orientation="left" />
+                    <YAxis yAxisId="right" orientation="right" domain={[0, 5]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line yAxisId="left" type="monotone" dataKey="reviews" name="Reviews" stroke="#3b82f6" activeDot={{ r: 8 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="rating" name="Avg Rating" stroke="#f59e0b" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Reviews with Tabs */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Customer Reviews</CardTitle>
+              <CardDescription>Latest feedback from Google Business Profile</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Search Input */}
+            <div className="mb-6">
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search reviews by content or author..."
+                  className="w-full pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searchQuery && (
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear search</span>
+                  </Button>
+                )}
+              </div>
             </div>
             
-            <div className="mb-4">
-              <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">
-                Your Reply
-              </label>
-              <Textarea
-                id="reply"
-                className="resize-none"
-                rows={5}
-                placeholder="Type your reply here..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-              ></Textarea>
-              <p className="text-xs text-gray-500 mt-1">
-                Your reply will be public and visible to anyone who can see this review on Google.
-              </p>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-3 mb-6">
+                <TabsTrigger value="all">All Reviews ({filteredReviews.length})</TabsTrigger>
+                <TabsTrigger value="negative">Negative Reviews ({filteredReviews.filter(r => r.rating <= 3).length})</TabsTrigger>
+                <TabsTrigger value="unreplied">Unreplied ({filteredReviews.filter(r => !r.replied).length})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="space-y-4">
+                {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
+              </TabsContent>
+              
+              <TabsContent value="negative" className="space-y-4">
+                {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
+              </TabsContent>
+              
+              <TabsContent value="unreplied" className="space-y-4">
+                {renderReviews(tabReviews, handleOpenReplyDialog, hasMoreReviews, handleLoadMore)}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+        
+        {/* Location List (only shown when viewing all locations) */}
+        {!activeLocation && locations.length > 0 && (
+          <div className="mt-6 bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4">Your Locations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {locations.map(location => {
+                // Determine which location data to use
+                const locId = location.id;
+                const locStats = reviewStats[locId as keyof typeof reviewStats];
+                
+                return (
+                  <div key={location.id} className="border rounded-md p-4 hover:border-blue-500 transition-colors">
+                    <div className="flex items-start">
+                      <div className="p-2 bg-blue-50 rounded-full mr-3">
+                        <MapPin size={18} className="text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{location.name}</h3>
+                        <div className="flex items-center mt-1">
+                          <span className="font-medium mr-1">{locStats.rating}</span>
+                          <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          <span className="text-xs text-gray-500 ml-1">({locStats.totalReviews} reviews)</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="text-sm">
+                            {location.isConnected ? (
+                              <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Connected</span>
+                            ) : (
+                              <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Not Connected</span>
+                            )}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => setActiveLocation(location.id)}
+                          >
+                            View Reviews
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Additional location review stats */}
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 pt-3 border-t">
+                      <div>
+                        <span className="block font-medium">New Reviews (30d):</span>
+                        {locStats.newReviews}
+                      </div>
+                      <div>
+                        <span className="block font-medium">Response Rate:</span>
+                        {locStats.responseRate}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setReplyDialogOpen(false);
-                  setCurrentReview(null);
-                  setReplyText("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmitReply}
-                disabled={isSubmittingReply || !replyText.trim()}
-              >
-                {isSubmittingReply ? "Submitting..." : "Submit Reply"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
+          </div>
         )}
-      </Dialog>
-    </>
+        
+        {/* Reply Dialog */}
+        <Dialog open={replyDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setReplyDialogOpen(false);
+            setCurrentReview(null);
+            setReplyText("");
+          }
+        }}>
+          {currentReview && (
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>Reply to {currentReview.author}&apos;s Review</DialogTitle>
+              </DialogHeader>
+              
+              <div className="mb-6 p-4 bg-gray-50 rounded-md">
+                <div className="flex items-center mb-2">
+                  <div className="font-medium">{currentReview.author}</div>
+                  <div className="ml-2 flex items-center">
+                    <div className="flex space-x-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <StarIcon 
+                          key={i}
+                          className={`h-4 w-4 ${i < currentReview.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm text-gray-500">{currentReview.date}</span>
+                  </div>
+                </div>
+                <p className="text-sm">{currentReview.content}</p>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="reply" className="block text-sm font-medium text-gray-700 mb-1">
+                  Your Reply
+                </label>
+                <Textarea
+                  id="reply"
+                  className="resize-none"
+                  rows={5}
+                  placeholder="Type your reply here..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                ></Textarea>
+                <p className="text-xs text-gray-500 mt-1">
+                  Your reply will be public and visible to anyone who can see this review on Google.
+                </p>
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReplyDialogOpen(false);
+                    setCurrentReview(null);
+                    setReplyText("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitReply}
+                  disabled={isSubmittingReply || !replyText.trim()}
+                >
+                  {isSubmittingReply ? "Submitting..." : "Submit Reply"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          )}
+        </Dialog>
+      </div>
+    </div>
   );
 }
 
