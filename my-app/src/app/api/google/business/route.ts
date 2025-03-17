@@ -7,8 +7,7 @@ import { auth } from '@clerk/nextjs/server';
  */
 export async function GET() {
   try {
-    const authObj = auth();
-    const userId = authObj.userId;
+    const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -65,8 +64,7 @@ export async function GET() {
  */
 export async function POST() {
   try {
-    const authObj = auth();
-    const userId = authObj.userId;
+    const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
