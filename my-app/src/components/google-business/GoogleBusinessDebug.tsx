@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface DebugInfo {
   hasGoogleConnection?: boolean;
@@ -20,11 +21,20 @@ interface DebugInfo {
   oauthError?: string | null;
 }
 
+interface ApiStatus {
+  name: string;
+  endpoint: string;
+  status: 'checking' | 'enabled' | 'disabled' | 'error';
+  details?: string;
+}
+
 export default function GoogleBusinessDebug() {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [debugInfo, setDebugInfo] = useState<DebugInfo>({});
+  const [apiStatus, setApiStatus] = useState<ApiStatus[]>([]);
   const [loading, setLoading] = useState(false);
+  const [checkingApis, setCheckingApis] = useState(false);
 
   const checkGoogleConnection = async () => {
     setLoading(true);
@@ -93,18 +103,181 @@ export default function GoogleBusinessDebug() {
     }
   };
 
+  const checkGoogleApis = async () => {
+    setCheckingApis(true);
+    
+    // Initialize API status checks
+    setApiStatus([
+      {
+        name: 'My Business Account Management API',
+        endpoint: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+        status: 'checking'
+      },
+      {
+        name: 'Business Profile API',
+        endpoint: 'https://businessprofileperformance.googleapis.com/v1/locations',
+        status: 'checking'
+      },
+      {
+        name: 'My Business Business Information API',
+        endpoint: 'https://mybusinessbusinessinformation.googleapis.com/v1/categories',
+        status: 'checking'
+      },
+      {
+        name: 'My Business Reviews API',
+        endpoint: 'https://mybusinessreviews.googleapis.com/v1/accounts',
+        status: 'checking'
+      }
+    ]);
+    
+    try {
+      // Get token
+      const token = await getToken({ template: 'oauth_google' });
+      if (!token) {
+        setApiStatus(prev => prev.map(api => ({
+          ...api,
+          status: 'error',
+          details: 'No token available'
+        })));
+        setCheckingApis(false);
+        return;
+      }
+      
+      // Check each API in parallel
+      const checkPromises = apiStatus.map(async (api) => {
+        try {
+          const response = await fetch(api.endpoint, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          let status: 'enabled' | 'disabled' | 'error' = 'disabled';
+          let details = `Status code: ${response.status}`;
+          
+          if (response.ok) {
+            status = 'enabled';
+            details = 'API is enabled and working';
+          } else if (response.status === 403) {
+            status = 'disabled';
+            details = 'API is not enabled in your Google Cloud Project';
+          } else if (response.status === 401) {
+            status = 'error';
+            details = 'Authentication failed - token might be invalid';
+          } else if (response.status === 404) {
+            // 404 on some endpoints is normal if you don't have data yet
+            status = 'enabled';
+            details = 'API seems enabled, but endpoint may require specific parameters';
+          } else {
+            // Try to get more details from the error response
+            try {
+              const errorText = await response.text();
+              details = `${details} - ${errorText.substring(0, 100)}...`;
+            } catch {
+              // If we can't get the error text, just use the status
+            }
+          }
+          
+          return { ...api, status, details };
+        } catch (error) {
+          return {
+            ...api,
+            status: 'error' as const,
+            details: error instanceof Error ? error.message : String(error)
+          };
+        }
+      });
+      
+      const results = await Promise.all(checkPromises);
+      setApiStatus(results as ApiStatus[]);
+      
+    } catch (error) {
+      console.error('Error checking APIs:', error);
+      setApiStatus(prev => prev.map(api => ({
+        ...api,
+        status: 'error' as const,
+        details: error instanceof Error ? error.message : String(error)
+      })));
+    } finally {
+      setCheckingApis(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'enabled': return 'text-green-600';
+      case 'disabled': return 'text-red-600';
+      case 'error': return 'text-orange-600';
+      default: return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
       <h3 className="font-medium mb-4">Google Business Profile Debug Tools</h3>
       
-      <Button 
-        variant="outline" 
-        onClick={checkGoogleConnection}
-        disabled={loading}
-        className="mb-4"
-      >
-        {loading ? 'Checking...' : 'Check Google Connection Status'}
-      </Button>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Button 
+          variant="outline" 
+          onClick={checkGoogleConnection}
+          disabled={loading}
+        >
+          {loading ? 'Checking...' : 'Check Google Connection Status'}
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          onClick={checkGoogleApis}
+          disabled={checkingApis}
+        >
+          {checkingApis ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Checking APIs...
+            </>
+          ) : 'Check Google APIs Status'}
+        </Button>
+      </div>
+      
+      {apiStatus.length > 0 && (
+        <div className="mb-4 bg-white p-4 rounded border">
+          <h4 className="font-medium mb-2">Google API Status</h4>
+          <div className="space-y-3">
+            {apiStatus.map((api, index) => (
+              <div key={index} className="border-b pb-2 last:border-b-0">
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${
+                    api.status === 'checking' ? 'bg-gray-400' :
+                    api.status === 'enabled' ? 'bg-green-500' :
+                    api.status === 'disabled' ? 'bg-red-500' : 'bg-orange-500'
+                  }`}></div>
+                  <span className="font-medium">{api.name}</span>
+                  <span className={`ml-2 text-sm ${getStatusColor(api.status)}`}>
+                    ({api.status})
+                  </span>
+                </div>
+                {api.details && (
+                  <p className="text-xs text-gray-500 mt-1 ml-5">{api.details}</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1 ml-5">{api.endpoint}</p>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 text-sm">
+            <h5 className="font-medium mb-1">How to fix disabled APIs:</h5>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Go to the <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console API Library</a></li>
+              <li>Search for each disabled API by name</li>
+              <li>Click on the API and click &quot;Enable&quot;</li>
+              <li>Repeat for all disabled APIs</li>
+              <li>Wait a few minutes for changes to propagate</li>
+              <li>Come back and check API status again</li>
+            </ol>
+          </div>
+        </div>
+      )}
       
       {Object.keys(debugInfo).length > 0 && (
         <div className="bg-white p-3 rounded border text-xs font-mono">
