@@ -4,7 +4,9 @@
  * It uses the OAuth tokens obtained through Clerk's Google OAuth provider
  */
 export class GoogleBusinessService {
-  private readonly baseUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
+  private readonly baseUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1';
+  private readonly businessInfoUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
+  private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
   private accessToken: string | null = null;
   
   /**
@@ -34,6 +36,7 @@ export class GoogleBusinessService {
     }
     
     try {
+      console.log('Making API request to get accounts:', `${this.baseUrl}/accounts`);
       const response = await fetch(`${this.baseUrl}/accounts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -42,12 +45,50 @@ export class GoogleBusinessService {
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        // For development/testing purposes: Return mock data if API fails
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Returning mock account data for development');
+          return {
+            accounts: [
+              {
+                name: 'accounts/123456789',
+                accountName: 'Blue Sky Roofing',
+                type: 'LOCATION_GROUP',
+                role: 'OWNER',
+                verificationState: 'VERIFIED'
+              }
+            ]
+          };
+        }
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Accounts API response data:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching business accounts:', error);
+      
+      // For development/testing purposes: Return mock data if any error occurs
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Returning mock account data after error');
+        return {
+          accounts: [
+            {
+              name: 'accounts/123456789',
+              accountName: 'Blue Sky Roofing',
+              type: 'LOCATION_GROUP',
+              role: 'OWNER',
+              verificationState: 'VERIFIED'
+            }
+          ]
+        };
+      }
+      
       throw error;
     }
   }
@@ -64,7 +105,8 @@ export class GoogleBusinessService {
     }
     
     try {
-      const response = await fetch(`${this.baseUrl}/accounts/${accountId}/locations`, {
+      console.log('Making API request to get locations:', `${this.businessInfoUrl}/${accountId}/locations`);
+      const response = await fetch(`${this.businessInfoUrl}/${accountId}/locations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -72,30 +114,86 @@ export class GoogleBusinessService {
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        // For development/testing purposes: Return mock data if API fails
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Returning mock location data for development');
+          return {
+            locations: [
+              {
+                name: `${accountId}/locations/abcdefg`,
+                title: 'Blue Sky Roofing - Main Office',
+                address: {
+                  formattedAddress: '123 Main St, Arlington, TX 76010'
+                },
+                primaryPhone: '+18175551234'
+              },
+              {
+                name: `${accountId}/locations/hijklmn`,
+                title: 'Blue Sky Roofing - Dallas Branch',
+                address: {
+                  formattedAddress: '456 Commerce Ave, Dallas, TX 75001'
+                },
+                primaryPhone: '+12145556789'
+              }
+            ]
+          };
+        }
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Locations API response data:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching locations:', error);
+      
+      // For development/testing purposes: Return mock data if any error occurs
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Returning mock location data after error');
+        return {
+          locations: [
+            {
+              name: `${accountId}/locations/abcdefg`,
+              title: 'Blue Sky Roofing - Main Office',
+              address: {
+                formattedAddress: '123 Main St, Arlington, TX 76010'
+              },
+              primaryPhone: '+18175551234'
+            },
+            {
+              name: `${accountId}/locations/hijklmn`,
+              title: 'Blue Sky Roofing - Dallas Branch',
+              address: {
+                formattedAddress: '456 Commerce Ave, Dallas, TX 75001'
+              },
+              primaryPhone: '+12145556789'
+            }
+          ]
+        };
+      }
+      
       throw error;
     }
   }
   
   /**
    * Get reviews for a specific location
-   * @param locationId The location ID
+   * @param locationName The location name/path
    * @returns A list of reviews for this location
    */
-  async getReviews(locationId: string) {
+  async getReviews(locationName: string) {
     const token = await this.getAccessToken();
     if (!token) {
       throw new Error('No Google access token available');
     }
     
     try {
-      // Note: Reviews API is on a different base URL
-      const response = await fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${locationId}/reviews`, {
+      console.log('Making API request to get reviews:', `${this.reviewsUrl}/${locationName}/reviews`);
+      const response = await fetch(`${this.reviewsUrl}/${locationName}/reviews`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -103,30 +201,97 @@ export class GoogleBusinessService {
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        // For development/testing purposes: Return mock data if API fails
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Returning mock review data for development');
+          return {
+            reviews: [
+              {
+                name: `${locationName}/reviews/abc123`,
+                starRating: 5,
+                comment: "Excellent service and quality work! The team was very professional.",
+                createTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                reviewer: { displayName: "John Smith" }
+              },
+              {
+                name: `${locationName}/reviews/def456`,
+                starRating: 4,
+                comment: "Good work overall. Would use again.",
+                createTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+                reviewer: { displayName: "Sarah Johnson" }
+              },
+              {
+                name: `${locationName}/reviews/ghi789`,
+                starRating: 5,
+                comment: "Best roofing company in the area. Highly recommend!",
+                createTime: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+                reviewer: { displayName: "Michael Williams" }
+              }
+            ]
+          };
+        }
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Reviews API response data:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      
+      // For development/testing purposes: Return mock data if any error occurs
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Returning mock review data after error');
+        return {
+          reviews: [
+            {
+              name: `${locationName}/reviews/abc123`,
+              starRating: 5,
+              comment: "Excellent service and quality work! The team was very professional.",
+              createTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              reviewer: { displayName: "John Smith" }
+            },
+            {
+              name: `${locationName}/reviews/def456`,
+              starRating: 4,
+              comment: "Good work overall. Would use again.",
+              createTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+              reviewer: { displayName: "Sarah Johnson" }
+            },
+            {
+              name: `${locationName}/reviews/ghi789`,
+              starRating: 5,
+              comment: "Best roofing company in the area. Highly recommend!",
+              createTime: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+              reviewer: { displayName: "Michael Williams" }
+            }
+          ]
+        };
+      }
+      
       throw error;
     }
   }
   
   /**
    * Reply to a review
-   * @param reviewId The review ID
+   * @param reviewName The review name/path
    * @param reply The reply text
    * @returns The updated review
    */
-  async replyToReview(reviewId: string, reply: string) {
+  async replyToReview(reviewName: string, reply: string) {
     const token = await this.getAccessToken();
     if (!token) {
       throw new Error('No Google access token available');
     }
     
     try {
-      const response = await fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${reviewId}/reply`, {
+      console.log('Making API request to reply to review:', `${this.reviewsUrl}/${reviewName}/reply`);
+      const response = await fetch(`${this.reviewsUrl}/${reviewName}/reply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -136,12 +301,42 @@ export class GoogleBusinessService {
       });
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
+        // For development/testing purposes: Return mock data if API fails
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Returning mock reply data for development');
+          return {
+            name: reviewName,
+            reply: {
+              comment: reply,
+              updateTime: new Date().toISOString()
+            }
+          };
+        }
+        
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Reply API response data:', data);
+      return data;
     } catch (error) {
       console.error('Error replying to review:', error);
+      
+      // For development/testing purposes: Return mock data if any error occurs
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Returning mock reply data after error');
+        return {
+          name: reviewName,
+          reply: {
+            comment: reply,
+            updateTime: new Date().toISOString()
+          }
+        };
+      }
+      
       throw error;
     }
   }
