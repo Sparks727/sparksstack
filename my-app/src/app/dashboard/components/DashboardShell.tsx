@@ -9,15 +9,12 @@ import {
   Map,
   BarChart3,
   Settings,
-  Bell,
-  Search,
   Menu,
   X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
 
 // Define navigation items with icons and paths
 const navigationItems = [
@@ -39,7 +36,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
           {/* Mobile Menu Button */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -96,29 +93,13 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           </Sheet>
           
           {/* Logo */}
-          <Link href="/dashboard" className="hidden lg:flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <span className="text-xl font-bold text-blue-500">SparksStack</span>
           </Link>
         </div>
         
-        {/* Search */}
-        <div className="relative hidden md:flex flex-1 items-center gap-4 md:gap-6 lg:gap-8">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full bg-background pl-8 md:w-2/3 lg:w-1/3"
-            />
-          </div>
-        </div>
-        
         {/* Right side actions */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+        <div className="flex items-center">
           {user && <UserButton afterSignOutUrl="/" />}
         </div>
       </header>
