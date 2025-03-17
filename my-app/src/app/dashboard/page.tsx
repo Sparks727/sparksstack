@@ -24,6 +24,7 @@ interface DebugInfo {
     message: string;
     status?: number;
     error?: string;
+    details?: Record<string, unknown> | string; // Either an object or string
   } | null;
 }
 
@@ -110,6 +111,9 @@ export default function GoogleBusinessProfileTestPage() {
       // Test the connection
       const result = await service.testConnection();
       
+      // Add detailed debug logging of the result
+      console.log('API Test result:', JSON.stringify(result, null, 2));
+      
       // Update debug info with the result
       setDebugInfo(prev => ({
         ...prev,
@@ -117,11 +121,13 @@ export default function GoogleBusinessProfileTestPage() {
           success: result.success,
           message: result.message,
           status: result.status,
-          error: result.error
+          error: result.error,
+          details: result.details || result.data
         }
       }));
       
     } catch (error: unknown) {
+      console.error('API Test error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error testing API connection';
       setDebugInfo(prev => ({
         ...prev,
@@ -176,6 +182,19 @@ export default function GoogleBusinessProfileTestPage() {
                 <p className="text-sm mt-1">{debugInfo.apiTest.message}</p>
                 {debugInfo.apiTest.error && (
                   <p className="text-sm mt-1 font-mono text-xs">Error: {debugInfo.apiTest.error}</p>
+                )}
+                {debugInfo.apiTest.status && (
+                  <p className="text-sm mt-1 font-mono text-xs">Status: {debugInfo.apiTest.status}</p>
+                )}
+                {debugInfo.apiTest.details && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <p className="text-xs font-medium">Additional Details:</p>
+                    <pre className="text-xs font-mono whitespace-pre-wrap max-h-32 overflow-auto bg-white bg-opacity-50 p-2 rounded mt-1">
+                      {typeof debugInfo.apiTest.details === 'string' 
+                        ? debugInfo.apiTest.details 
+                        : JSON.stringify(debugInfo.apiTest.details, null, 2)}
+                    </pre>
+                  </div>
                 )}
               </Alert>
             )}

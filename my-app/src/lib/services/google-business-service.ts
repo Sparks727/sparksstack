@@ -36,23 +36,44 @@ export class GoogleBusinessService {
         throw new Error('No access token available');
       }
       
+      // Make a more robust request with better error handling
       const response = await fetch(`${this.baseUrl}/accounts`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        // The next line is important for handling CORS in development and production
+        mode: 'cors',
       });
       
+      // Handle specific error codes better
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        let errorMessage = '';
+        // Define a specific interface for the error data
+        let errorData: { error?: { message?: string } } = {};
+        
+        try {
+          errorData = await response.json();
+          errorMessage = errorData.error?.message || response.statusText;
+        } catch {
+          // If the response is not JSON, use text instead
+          const errorText = await response.text().catch(() => 'Failed to parse error response');
+          errorMessage = errorText || response.statusText;
+        }
+        
+        // Return more detailed error information
         return {
           success: false,
           status: response.status,
-          error: errorData.error || response.statusText,
-          message: 'Failed to connect to Google Business Profile API'
+          error: errorMessage,
+          message: `Failed to connect to Google Business Profile API (${response.status}: ${errorMessage})`,
+          details: errorData
         };
       }
       
+      // Parse the successful response
       const data = await response.json();
       return {
         success: true,
@@ -60,10 +81,12 @@ export class GoogleBusinessService {
         message: 'Successfully connected to Google Business Profile API'
       };
     } catch (error) {
+      console.error('Google Business API test error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        message: 'Error testing connection to Google Business Profile API'
+        message: 'Error testing connection to Google Business Profile API',
+        isNetworkError: true
       };
     }
   }
