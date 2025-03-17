@@ -4,6 +4,7 @@
  * It uses the OAuth tokens obtained through Clerk's Google OAuth provider
  */
 export class GoogleBusinessService {
+  // Updated API endpoints to use the v4 API and proper format
   private readonly baseUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1';
   private readonly businessInfoUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
   private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
@@ -36,17 +37,56 @@ export class GoogleBusinessService {
     }
     
     try {
+      // First try getting accounts directly
       console.log('Making API request to get accounts:', `${this.baseUrl}/accounts`);
-      const response = await fetch(`${this.baseUrl}/accounts`, {
+      console.log('Authorization header (first 15 chars):', `Bearer ${token.substring(0, 15)}...`);
+      
+      let response = await fetch(`${this.baseUrl}/accounts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
+      console.log('API response status:', response.status, response.statusText);
+      
+      // If the first attempt fails, try using the /v1/accounts endpoint
+      if (!response.ok && response.status === 404) {
+        console.log('Trying alternative accounts endpoint: /v1/accounts');
+        response = await fetch(`https://mybusinessaccountmanagement.googleapis.com/v1/accounts`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('Alternative API response status:', response.status, response.statusText);
+      }
+      
+      // If that also fails, try the accountsById endpoint which works differently
+      if (!response.ok && (response.status === 404 || response.status === 403)) {
+        console.log('Trying accountsById endpoint');
+        response = await fetch(`https://mybusinessaccountmanagement.googleapis.com/v1/accountsById`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('AccountsById API response status:', response.status, response.statusText);
+      }
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API error response:', errorText);
+        
+        // Add more detailed error logging
+        if (response.status === 403) {
+          console.error('403 Forbidden: This typically means the API is not enabled in your Google Cloud Project');
+        } else if (response.status === 401) {
+          console.error('401 Unauthorized: This typically means token issues or insufficient permissions');
+        } else if (response.status === 404) {
+          console.error('404 Not Found: This endpoint may be incorrect or the API might have changed');
+        }
+        
         throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       

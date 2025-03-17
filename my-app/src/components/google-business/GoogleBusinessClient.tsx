@@ -279,6 +279,8 @@ export default function GoogleBusinessClient() {
   if (googleBusinessData.error) {
     const isVerificationError = googleBusinessData.debugInfo.oauthError?.includes('access_denied');
     const isScopeError = googleBusinessData.debugInfo.accountsError === 'Missing business.manage scope';
+    const isAPIError = googleBusinessData.debugInfo.accountsError?.includes('API error: 403') ||
+                      googleBusinessData.debugInfo.accountsError?.includes('API is not enabled');
     
     return (
       <div className={`p-4 ${
@@ -286,14 +288,18 @@ export default function GoogleBusinessClient() {
           ? 'bg-yellow-50 border border-yellow-200 text-yellow-800' 
           : isScopeError
             ? 'bg-amber-50 border border-amber-200 text-amber-800'
-            : 'bg-red-50 border border-red-200 text-red-700'
+            : isAPIError
+              ? 'bg-blue-50 border border-blue-200 text-blue-800'
+              : 'bg-red-50 border border-red-200 text-red-700'
       } rounded-md`}>
         <h3 className="font-medium">
           {isVerificationError 
             ? 'Google Verification Required' 
             : isScopeError
               ? 'Missing Google Business Profile Permissions'
-              : 'Error Connecting to Google Business Profile'
+              : isAPIError
+                ? 'Google API Not Enabled'
+                : 'Error Connecting to Google Business Profile'
           }
         </h3>
         <p>{googleBusinessData.error}</p>
@@ -320,6 +326,23 @@ export default function GoogleBusinessClient() {
               <li>Make sure to check the box that allows access to &quot;View and manage your Google Business Profile&quot; when prompted for permissions</li>
             </ol>
           </div>
+        ) : isAPIError ? (
+          <div className="mt-4 text-sm">
+            <p className="mb-2">You need to enable the Google Business Profile APIs in your Google Cloud Project:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Go to the <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console API Library</a></li>
+              <li>Search for and enable these APIs:
+                <ul className="list-disc pl-5 mt-1 mb-2">
+                  <li>Business Profile API</li>
+                  <li>My Business Account Management API</li>
+                  <li>My Business Business Information API</li>
+                  <li>My Business Reviews API</li>
+                </ul>
+              </li>
+              <li>Wait a few minutes for the changes to propagate</li>
+              <li>Try refreshing this page</li>
+            </ol>
+          </div>
         ) : (
           <p className="mt-2 text-sm">
             Please make sure you have connected your Google Business Profile account in your settings.
@@ -339,6 +362,17 @@ export default function GoogleBusinessClient() {
           We couldn&apos;t find any Google Business Profile accounts associated with your Google account.
           Please make sure you have at least one business account set up in Google Business Profile Manager.
         </p>
+        
+        <div className="mt-4 text-sm">
+          <p className="mb-2">To create a Google Business Profile:</p>
+          <ol className="list-decimal pl-5 space-y-1">
+            <li>Go to <a href="https://business.google.com/create" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a></li>
+            <li>Sign in with your Google account (<code className="bg-gray-100 px-1">{user?.primaryEmailAddress?.emailAddress}</code>)</li>
+            <li>Follow the steps to create a business profile</li>
+            <li>Once created, come back and refresh this page</li>
+          </ol>
+        </div>
+        
         {showDebugInfo()}
       </div>
     );
