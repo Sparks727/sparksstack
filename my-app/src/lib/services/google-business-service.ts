@@ -5,6 +5,23 @@
  */
 export class GoogleBusinessService {
   private readonly baseUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
+  private accessToken: string | null = null;
+  
+  /**
+   * Constructor that can accept an access token directly
+   */
+  constructor(accessToken?: string) {
+    if (accessToken) {
+      this.accessToken = accessToken;
+    }
+  }
+  
+  /**
+   * Set the access token for API calls
+   */
+  setAccessToken(token: string) {
+    this.accessToken = token;
+  }
   
   /**
    * Get the authenticated user's accounts
@@ -131,17 +148,15 @@ export class GoogleBusinessService {
   
   /**
    * Helper method to get the Google access token
-   * In a real implementation, you would get this from your auth system
    * @returns The Google access token or null if not available
    */
   private async getAccessToken(): Promise<string | null> {
-    // For now, we'll use a mock token for testing
-    return null;
+    // If token was provided to constructor or set manually, use it
+    if (this.accessToken) {
+      return this.accessToken;
+    }
     
-    // In a real implementation, you would:
-    // 1. Get the user's ID from the session/cookies
-    // 2. Fetch the user's Google OAuth tokens from your database
-    // 3. Check if the token is expired and refresh if needed
-    // 4. Return the access token
+    // Otherwise, return null (token should be passed from client components)
+    return null;
   }
 } 

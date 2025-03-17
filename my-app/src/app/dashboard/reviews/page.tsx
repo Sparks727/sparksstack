@@ -5,6 +5,15 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocationStore } from "@/lib/store/location-store";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReviewCard from "@/components/ReviewCard";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import GoogleBusinessClient from "./GoogleBusinessClient";
 
 function RatingIcon() {
   return (
@@ -71,10 +80,19 @@ export default function ReviewsPage() {
   ];
 
   return (
-    <>
-      <div className="mb-4">
+    <div className="p-6 space-y-8">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Reviews</h1>
-        <p className="text-muted-foreground">Manage and respond to your customer reviews</p>
+        <Button variant="outline">Export</Button>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Google Business Profile Data</h2>
+        <p className="text-muted-foreground">
+          Below is the real data from your connected Google Business Profile account. 
+          This data is fetched directly via the Google Business Profile API.
+        </p>
+        <GoogleBusinessClient />
       </div>
 
       <div className="space-y-6">
@@ -217,6 +235,6 @@ export default function ReviewsPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 } 
