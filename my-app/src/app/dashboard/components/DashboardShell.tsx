@@ -12,9 +12,7 @@ import {
   Bell,
   Search,
   Menu,
-  Star,
-  X,
-  FileText
+  X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,9 +23,7 @@ import { Input } from "@/components/ui/input"
 const navigationItems = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Locations", href: "/dashboard/locations", icon: Map },
-  { name: "Reviews", href: "/dashboard/reviews", icon: Star },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Reports", href: "/dashboard/reports", icon: FileText },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 

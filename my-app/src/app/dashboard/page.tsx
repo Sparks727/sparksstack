@@ -833,7 +833,6 @@ export default function Dashboard() {
             <CardTitle>Customer Reviews</CardTitle>
             <CardDescription>Latest feedback from Google Business Profile</CardDescription>
           </div>
-          <Button onClick={() => window.location.href = '/dashboard/reviews'}>Manage All Reviews</Button>
         </CardHeader>
         <CardContent>
           {/* Search Input */}
