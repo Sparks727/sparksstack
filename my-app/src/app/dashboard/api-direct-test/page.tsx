@@ -17,8 +17,8 @@ interface ApiTestResult {
   statusCode: number;
   statusText: string;
   errorMessage: string | null;
-  errorDetails: any;
-  responseBody: any;
+  errorDetails: unknown;
+  responseBody: unknown;
   requestDetails: {
     endpoint: string;
     method: string;
@@ -179,6 +179,10 @@ export default function ApiDirectTestPage() {
                   ? 'All APIs are working correctly'
                   : `${failedApis.length} of ${testResults.results.length} APIs failed testing`}
               </CardDescription>
+              <div className="mt-2 text-sm text-muted-foreground">
+                <p>We are now focusing on the Legacy Google My Business API for all operations.</p>
+                <p>Other specialized APIs have been disabled in Google Cloud Console.</p>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">

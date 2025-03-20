@@ -1,22 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SparksStack Business Profile Manager
 
-## Getting Started
+A Next.js application for managing your Google Business Profiles.
 
-First, run the development server:
+## Google Business API Strategy
+
+This application uses the Google My Business API (Legacy API) for all business profile operations. We've chosen this approach for the following reasons:
+
+1. **Simplicity**: One API to manage instead of 5-6 different specialized APIs
+2. **Comprehensive Coverage**: The legacy API covers most basic business profile management functions
+3. **Better Documentation**: As an older API, it has more examples and community support
+4. **Less Quota Management**: Only need to increase quotas for a single API
+
+While Google does offer newer specialized APIs (Business Information API, Reviews API, Performance API, etc.), we've found that the legacy API provides the most reliable and comprehensive access to business profile data.
+
+## Google Cloud Console Setup
+
+To use this application, you need to:
+
+1. Enable the following APIs in Google Cloud Console:
+   - Google My Business API (Legacy API)
+   - My Business Account Management API
+
+2. Request quota increases for the Google My Business API in Google Cloud Console:
+   - Navigate to: Google Cloud Console > APIs & Services > Quotas & System Limits
+   - Filter for "Google My Business API" 
+   - Request increases for both read and write operations
+
+3. Ensure your OAuth consent screen is configured with the following scopes:
+   - https://www.googleapis.com/auth/business.manage
+
+## Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API Diagnostics
+
+The application includes a built-in API diagnostics tool that tests connectivity to the Google Business APIs. Access it at `/dashboard/api-direct-test` to see detailed results and recommendations.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

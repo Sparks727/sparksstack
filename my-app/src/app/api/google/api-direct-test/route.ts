@@ -1,8 +1,28 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Define more specific types for API bodies
+interface ApiTimeRange {
+  startTime: string;
+  endTime: string;
+}
+
+interface ApiMetricsBody {
+  locationNames: string[];
+  metrics: string[];
+  timeRange: ApiTimeRange;
+}
+
+interface ApiTest {
+  name: string;
+  endpoint: string;
+  apiService: string;
+  method: string;
+  body?: ApiMetricsBody | Record<string, unknown>;
+}
+
 // List of APIs to test with their endpoints
-const API_TESTS = [
+const API_TESTS: ApiTest[] = [
   {
     name: 'Account Management API',
     endpoint: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=1',
@@ -10,15 +30,16 @@ const API_TESTS = [
     method: 'GET',
   },
   {
-    name: 'Business Information API',
-    endpoint: 'https://mybusinessbusinessinformation.googleapis.com/v1/chains?pageSize=1',
-    apiService: 'mybusinessbusinessinformation.googleapis.com',
-    method: 'GET',
-  },
-  {
     name: 'Legacy My Business API',
     endpoint: 'https://mybusiness.googleapis.com/v4/accounts?pageSize=1',
     apiService: 'mybusiness.googleapis.com',
+    method: 'GET',
+  },
+  /* Disabled APIs - kept for reference
+  {
+    name: 'Business Information API',
+    endpoint: 'https://mybusinessbusinessinformation.googleapis.com/v1/chains?pageSize=1',
+    apiService: 'mybusinessbusinessinformation.googleapis.com',
     method: 'GET',
   },
   {
@@ -47,6 +68,7 @@ const API_TESTS = [
     apiService: 'mybusinessverifications.googleapis.com',
     method: 'GET',
   }
+  */
 ];
 
 interface ApiTestResult {
@@ -67,7 +89,8 @@ interface ApiTestResult {
 
 /**
  * API endpoint to directly test each Google Business API individually
- * This provides detailed error messages and recommendations for fixing issues
+ * Currently focusing on Legacy My Business API and Account Management API only
+ * Other specialized APIs have been disabled in Google Cloud Console
  */
 export async function GET() {
   try {
@@ -182,6 +205,10 @@ export async function GET() {
             result.recommendations.push('Ensure your Google account has necessary permissions to manage Business Profiles');
             result.recommendations.push(`Verify the ${test.apiService} API is enabled in Google Cloud Console`);
             result.recommendations.push('Check API quotas in Google Cloud Console - they might be set to 0');
+            if (test.name === 'Legacy My Business API') {
+              result.recommendations.push('For the Legacy API, make sure to request a quota increase specifically for this API');
+              result.recommendations.push('You may need to complete the Google My Business API verification process in Google Cloud Console');
+            }
           } else if (apiResponse.status === 404) {
             result.recommendations.push('Resource not found. The endpoint might have changed or the resource doesn\'t exist');
           } else if (apiResponse.status === 429) {
@@ -207,7 +234,12 @@ export async function GET() {
     const failedApis = results.filter(r => !r.success);
     
     if (failedApis.length > 0) {
-      overallRecommendations.push('Multiple APIs are failing - this suggests a project-level issue rather than individual API problems');
+      if (failedApis.some(api => api.name === 'Legacy My Business API')) {
+        overallRecommendations.push('We are now focusing solely on the Google My Business API (Legacy) for all business profile operations');
+        overallRecommendations.push('You need to request a quota increase for the Legacy My Business API in Google Cloud Console');
+        overallRecommendations.push('Navigate to: Google Cloud Console > APIs & Services > Quotas & System Limits');
+        overallRecommendations.push('Filter for "Google My Business API" and request increases for both read and write operations');
+      }
       
       // Check for common patterns in error codes
       const errorCodes = new Set(failedApis.map(r => r.statusCode));
@@ -223,7 +255,7 @@ export async function GET() {
         }
       }
     } else {
-      overallRecommendations.push('All APIs are working correctly!');
+      overallRecommendations.push('All APIs are working correctly! You can now use the Legacy Google My Business API for all operations.');
     }
     
     return NextResponse.json({
