@@ -40,6 +40,21 @@ export class GoogleBusinessService {
       console.log('Using token (first 15 chars):', token.substring(0, 15) + '...');
       console.log('Token length:', token.length);
       
+      // Check for common token format issues
+      if (token.startsWith('eyJ') && token.includes('.')) {
+        console.warn('⚠️ Token appears to be a JWT, not a raw OAuth token. Google APIs typically expect a raw OAuth token.');
+      }
+      
+      if (token.startsWith('{') && token.endsWith('}')) {
+        console.warn('⚠️ Token appears to be a JSON string, not a raw OAuth token. Please extract the actual token from this JSON.');
+        try {
+          const parsed = JSON.parse(token);
+          console.log('JSON token contains keys:', Object.keys(parsed));
+        } catch (e) {
+          console.error('Failed to parse JSON token:', e);
+        }
+      }
+      
       // Check if token appears to be in JWT format (rough check)
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {

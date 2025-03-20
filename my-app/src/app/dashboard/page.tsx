@@ -94,21 +94,50 @@ export default function GoogleBusinessProfileTestPage() {
       let googleToken;
       try {
         // Use the custom JWT template specifically created for Google OAuth
-        // Replace 'google_oauth' with the actual name of your template if different
         googleToken = await getToken({ template: 'google_oauth' });
         console.log('Using custom JWT template token for Google OAuth');
         
         if (googleToken) {
           // If the token is in JSON format with a token property, extract it
           try {
-            const tokenData = JSON.parse(googleToken);
-            if (tokenData.google_oauth_access_token) {
-              console.log('Extracted direct OAuth token from custom template');
-              googleToken = tokenData.google_oauth_access_token;
+            // Log full token for debugging (only in development)
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Original token from Clerk:', googleToken);
             }
-          } catch {
+            
+            // Check if the token is a JSON string
+            if (googleToken.startsWith('{') && googleToken.endsWith('}')) {
+              const tokenData = JSON.parse(googleToken);
+              console.log('Token data keys:', Object.keys(tokenData));
+              
+              // Look for various possible property names
+              if (tokenData.google_oauth_access_token) {
+                console.log('Found google_oauth_access_token in template response');
+                googleToken = tokenData.google_oauth_access_token;
+              } else if (tokenData.access_token) {
+                console.log('Found access_token in template response');
+                googleToken = tokenData.access_token;
+              } else if (tokenData.token) {
+                console.log('Found token in template response');
+                googleToken = tokenData.token;
+              }
+            } else if (googleToken.includes('.') && googleToken.split('.').length === 3) {
+              // Looks like a JWT, try to decode it to see if it contains an access token
+              console.log('Token appears to be a JWT, trying to extract payload');
+              try {
+                const payload = JSON.parse(atob(googleToken.split('.')[1]));
+                console.log('JWT payload keys:', Object.keys(payload));
+                if (payload.access_token) {
+                  console.log('Found access_token in JWT payload');
+                  googleToken = payload.access_token;
+                }
+              } catch (decodeError) {
+                console.error('Error decoding JWT:', decodeError);
+              }
+            }
+          } catch (parseError) {
             // Token is not JSON, use as is
-            console.log('Token is not in JSON format, using as is');
+            console.log('Token parsing error, using as is:', parseError);
           }
         }
       } catch (templateError) {
@@ -292,7 +321,7 @@ export default function GoogleBusinessProfileTestPage() {
                 <li><strong>Make sure the Google Business Profile API is enabled in your Google Cloud Project:</strong>
                   <ul className="list-disc pl-5 mt-1 text-xs">
                     <li>Go to <a href="https://console.cloud.google.com/apis/library/businessprofileperformance.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console API Library</a></li>
-                    <li>Search for "Business Profile API" and "My Business API"</li>
+                    <li>Search for &quot;Business Profile API&quot; and &quot;My Business API&quot;</li>
                     <li>Enable both APIs for your project</li>
                   </ul>
                 </li>
