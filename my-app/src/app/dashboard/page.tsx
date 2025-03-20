@@ -370,6 +370,16 @@ export default function GoogleBusinessProfileTestPage() {
                 >
                   Test Business Profile APIs
                 </Button>
+                
+                <Button
+                  variant="default"
+                  className="bg-purple-600 hover:bg-purple-700"
+                  onClick={() => {
+                    window.location.href = '/dashboard/business-accounts';
+                  }}
+                >
+                  View Business Accounts
+                </Button>
               </div>
             </div>
             
