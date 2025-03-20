@@ -8,19 +8,14 @@ export class GoogleBusinessService {
   private readonly baseUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1';
   private readonly businessInfoUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1';
   private readonly reviewsUrl = 'https://mybusinessreviews.googleapis.com/v1';
-  private readonly mapsUrl = 'https://maps.googleapis.com/maps/api';
   private accessToken: string | null = null;
-  private apiKey: string | null = null;
   
   /**
    * Constructor that can accept an access token directly
    */
-  constructor(accessToken?: string, apiKey?: string) {
+  constructor(accessToken?: string) {
     if (accessToken) {
       this.accessToken = accessToken;
-    }
-    if (apiKey) {
-      this.apiKey = apiKey;
     }
   }
   
@@ -115,6 +110,20 @@ export class GoogleBusinessService {
         }
         
         console.log('Token is valid for People API');
+        
+        // Also try the userinfo endpoint which is often more reliable
+        const userinfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('UserInfo API response:', userinfoResponse.status, userinfoResponse.statusText);
+        
+        if (userinfoResponse.ok) {
+          console.log('Token is valid for UserInfo API');
+        }
       } catch (peopleError) {
         console.error('Error testing token with People API:', peopleError);
       }
@@ -182,22 +191,6 @@ export class GoogleBusinessService {
         } catch (endpointError) {
           console.error(`Error testing ${endpoint.name} endpoint:`, endpointError);
         }
-      }
-      
-      // Try a test with Maps API as a fallback
-      try {
-        console.log('Testing with Places API as fallback');
-        const mapsResponse = await fetch(`${this.mapsUrl}/place/details/json?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4&fields=name,rating&key=${token}`, {
-          method: 'GET'
-        });
-        
-        console.log('Maps API response:', mapsResponse.status, mapsResponse.statusText);
-        
-        if (mapsResponse.ok) {
-          console.log('Maps API connection successful');
-        }
-      } catch (mapsError) {
-        console.error('Error testing with Maps API:', mapsError);
       }
       
       // If we got here, all endpoints failed

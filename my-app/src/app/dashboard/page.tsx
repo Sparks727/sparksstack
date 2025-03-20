@@ -90,10 +90,40 @@ export default function GoogleBusinessProfileTestPage() {
   async function testApiConnection() {
     setApiTesting(true);
     try {
-      // Get the token
-      const token = await getToken({ template: 'oauth_google' });
+      // Try to get the direct OAuth token from the user's Google account
+      const googleAccount = user?.externalAccounts?.find(
+        (account) => account.provider === 'google'
+      );
       
-      if (!token) {
+      if (!googleAccount) {
+        setDebugInfo(prev => ({
+          ...prev,
+          apiTest: {
+            success: false,
+            message: 'No Google account connected',
+            error: 'Please connect your Google account in Clerk settings'
+          }
+        }));
+        return;
+      }
+      
+      // Try to get the raw token directly from the account
+      let googleToken;
+      try {
+        // @ts-ignore - getToken is available but might not be typed correctly
+        googleToken = await googleAccount.getToken();
+        console.log('Got direct token from Google account:', !!googleToken);
+      } catch (tokenError) {
+        console.error('Error getting direct token:', tokenError);
+      }
+      
+      // If direct token fails, fallback to Clerk's JWT template
+      if (!googleToken) {
+        googleToken = await getToken({ template: 'oauth_google' });
+        console.log('Using Clerk JWT template token');
+      }
+      
+      if (!googleToken) {
         setDebugInfo(prev => ({
           ...prev,
           apiTest: {
@@ -106,7 +136,7 @@ export default function GoogleBusinessProfileTestPage() {
       }
       
       // Initialize the service with the token
-      const service = new GoogleBusinessService(token);
+      const service = new GoogleBusinessService(googleToken);
       
       // Test the connection
       const result = await service.testConnection();
