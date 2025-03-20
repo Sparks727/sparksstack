@@ -453,7 +453,7 @@ export default function BusinessAccountsPage() {
 
   // Set pagination to show more rows per page
   useEffect(() => {
-    table.setPageSize(50); // Increased from the default (usually 10)
+    table.setPageSize(100); // Show 100 records by default to display more accounts
   }, [table]);
 
   async function fetchBusinessAccounts() {
@@ -461,16 +461,49 @@ export default function BusinessAccountsPage() {
     setError(null);
     
     try {
-      const response = await fetch('/api/google/business-accounts?pageSize=100'); // Request more accounts
-      const data = await response.json();
+      // Initialize an array to hold all fetched accounts
+      let allAccounts: BusinessAccount[] = [];
+      let nextPageToken = "";
+      let firstPage = true;
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch business accounts');
-      }
+      // Keep fetching pages until there's no more nextPageToken
+      do {
+        const pageUrl = firstPage 
+          ? '/api/google/business-accounts?pageSize=100' 
+          : `/api/google/business-accounts?pageSize=100&pageToken=${nextPageToken}`;
+        
+        const response = await fetch(pageUrl);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch business accounts');
+        }
+        
+        if (data.success && data.accounts) {
+          // Add this page of accounts to our collection
+          allAccounts = [...allAccounts, ...data.accounts];
+          
+          // Update nextPageToken for the next iteration
+          nextPageToken = data.nextPageToken || "";
+          firstPage = false;
+          
+          console.log(`Fetched ${data.accounts.length} accounts. Total so far: ${allAccounts.length}`);
+          
+          // If we have a next page token, continue fetching
+          if (!data.nextPageToken) {
+            console.log("No more pages to fetch");
+            break;
+          }
+        } else {
+          setError('No accounts found or unexpected response format');
+          break;
+        }
+      } while (nextPageToken);
       
-      if (data.success && data.accounts) {
+      if (allAccounts.length > 0) {
         // Store accounts temporarily
-        const fetchedAccounts = data.accounts;
+        const fetchedAccounts = allAccounts;
+        console.log(`Successfully fetched all ${fetchedAccounts.length} accounts`);
         
         // Fetch performance metrics and review counts for each account
         await Promise.all(
@@ -743,7 +776,7 @@ export default function BusinessAccountsPage() {
                         value={table.getState().pagination.pageSize}
                         onChange={(e) => table.setPageSize(Number(e.target.value))}
                       >
-                        {[10, 20, 50, 100].map((pageSize) => (
+                        {[10, 20, 50, 100, 200, 500].map((pageSize) => (
                           <option key={pageSize} value={pageSize}>
                             {pageSize}
                           </option>
