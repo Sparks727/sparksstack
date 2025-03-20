@@ -1,16 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-
-interface ClerkExternalAccount {
-  id: string;
-  provider: string;
-  emailAddress?: string;
-  approvedScopes: string[] | string;
-  accessToken?: string;
-  providerUserId?: string;
-  [key: string]: unknown;
-}
 
 /**
  * Debug endpoint for troubleshooting Google OAuth tokens
@@ -28,12 +17,18 @@ export async function GET() {
       );
     }
     
-    // Get the user from Clerk
-    const user = await clerkClient.users.getUser(userId);
+    // Get the full user to access OAuth tokens - use currentUser instead of clerkClient
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
     
     // Find the Google OAuth account if connected
-    const googleAccount = user.externalAccounts.find(
-      (account: ClerkExternalAccount) => account.provider === 'google'
+    const googleAccount = user.externalAccounts?.find(
+      account => account.provider === 'google'
     );
     
     if (!googleAccount) {
@@ -49,24 +44,42 @@ export async function GET() {
       googleAccountId: googleAccount.id,
       googleEmail: googleAccount.emailAddress,
       scopes: googleAccount.approvedScopes,
-      hasBusinessManageScope: typeof googleAccount.approvedScopes === 'string' 
-        ? googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage')
-        : googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage'),
-      // We won't expose the actual tokens in the response for security reasons
-      hasToken: !!googleAccount.accessToken,
+      hasBusinessManageScope: googleAccount.approvedScopes?.includes(
+        'https://www.googleapis.com/auth/business.manage'
+      ),
+      // Try to access the OAuth token - this may or may not be available
+      // @ts-expect-error - Property might not be exposed in type definitions
+      hasToken: !!googleAccount.provider_access_token,
       // Add token prefix for debugging (first 10 chars)
-      tokenPrefix: googleAccount.accessToken ? `${googleAccount.accessToken.substring(0, 10)}...` : null,
-      tokenLength: googleAccount.accessToken ? googleAccount.accessToken.length : 0,
+      // @ts-expect-error - Property might not be exposed in type definitions
+      tokenPrefix: googleAccount.provider_access_token ? 
+        // @ts-expect-error - Property might not be exposed in type definitions
+        `${googleAccount.provider_access_token.substring(0, 10)}...` : null,
+      // @ts-expect-error - Property might not be exposed in type definitions
+      tokenLength: googleAccount.provider_access_token ? 
+        // @ts-expect-error - Property might not be exposed in type definitions
+        googleAccount.provider_access_token.length : 0,
       // Add some info about the token format
-      tokenFormat: googleAccount.accessToken ? {
-        startsWithEyJ: googleAccount.accessToken.startsWith('eyJ'),
-        containsDots: googleAccount.accessToken.includes('.'),
-        dotCount: googleAccount.accessToken.split('.').length - 1,
-        isProbablyJwt: googleAccount.accessToken.startsWith('eyJ') && googleAccount.accessToken.split('.').length === 3,
-        isProbablyRawOAuth: !googleAccount.accessToken.startsWith('eyJ') && !googleAccount.accessToken.includes('.'),
+      // @ts-expect-error - Property might not be exposed in type definitions
+      tokenFormat: googleAccount.provider_access_token ? {
+        // @ts-expect-error - Property might not be exposed in type definitions
+        startsWithEyJ: googleAccount.provider_access_token.startsWith('eyJ'),
+        // @ts-expect-error - Property might not be exposed in type definitions
+        containsDots: googleAccount.provider_access_token.includes('.'),
+        // @ts-expect-error - Property might not be exposed in type definitions
+        dotCount: googleAccount.provider_access_token.split('.').length - 1,
+        // @ts-expect-error - Property might not be exposed in type definitions
+        isProbablyJwt: googleAccount.provider_access_token.startsWith('eyJ') && 
+          // @ts-expect-error - Property might not be exposed in type definitions
+          googleAccount.provider_access_token.split('.').length === 3,
+        // @ts-expect-error - Property might not be exposed in type definitions
+        isProbablyRawOAuth: !googleAccount.provider_access_token.startsWith('eyJ') && 
+          // @ts-expect-error - Property might not be exposed in type definitions
+          !googleAccount.provider_access_token.includes('.'),
       } : null,
-      // Try to extract provider specific info
-      providerUserId: googleAccount.providerUserId,
+      // Provider user ID
+      // @ts-expect-error - Property might not be exposed in type definitions
+      providerUserId: googleAccount.provider_user_id || googleAccount.providerUserId,
       publicMetadata: user.publicMetadata,
     };
     
