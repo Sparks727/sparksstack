@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CircleCheck, CircleX, ExternalLink, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CircleCheck, CircleX, ExternalLink, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ApiTestResult {
   name: string;
@@ -89,6 +90,123 @@ export default function ApiTestPage() {
     }
   };
 
+  // Function to get troubleshooting advice based on test results
+  const getTroubleshootingAdvice = (result: ApiTestResult) => {
+    if (result.success) return null;
+    
+    if (result.status === 401) {
+      return (
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <h4 className="font-medium text-amber-800">Authentication Issue</h4>
+          <ul className="list-disc ml-5 mt-1 text-sm text-amber-700 space-y-1">
+            <li>Verify your OAuth connection is set up correctly in Clerk</li>
+            <li>Check that your Google account is properly connected</li>
+            <li>Ensure your OAuth scope includes <code>https://www.googleapis.com/auth/business.manage</code></li>
+            <li>Try disconnecting and reconnecting your Google account</li>
+          </ul>
+        </div>
+      );
+    }
+    
+    if (result.status === 403) {
+      return (
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <h4 className="font-medium text-amber-800">Permission Issue</h4>
+          <ul className="list-disc ml-5 mt-1 text-sm text-amber-700 space-y-1">
+            <li>Verify the API is enabled in Google Cloud Console</li>
+            <li>Check that API quotas are not set to 0</li>
+            <li>Ensure your project is properly set up and verified</li>
+            <li>For testing mode, verify your email is added as a test user</li>
+          </ul>
+          <div className="mt-2">
+            <Button variant="outline" size="sm" asChild>
+              <a 
+                href="https://console.cloud.google.com/apis/library" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-xs"
+              >
+                Check API Status in Google Cloud
+                <ExternalLink className="ml-1 h-3 w-3" />
+              </a>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    if (result.status === 404) {
+      if (result.name === 'Legacy My Business API') {
+        return (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <h4 className="font-medium text-amber-800">Resource Not Found</h4>
+            <ul className="list-disc ml-5 mt-1 text-sm text-amber-700 space-y-1">
+              <li>Verify that your Google account has associated business accounts</li>
+              <li>The account ID might be invalid or incorrectly extracted</li>
+              <li>Check that your business is listed in <a href="https://business.google.com/locations" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Business Profile Manager</a></li>
+            </ul>
+          </div>
+        );
+      }
+      return (
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <h4 className="font-medium text-amber-800">Endpoint Not Found</h4>
+          <ul className="list-disc ml-5 mt-1 text-sm text-amber-700 space-y-1">
+            <li>The API endpoint may have changed or is not available</li>
+            <li>Verify that the API is properly enabled in Google Cloud Console</li>
+          </ul>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  // Check the overall status of the tests
+  const getOverallStatus = () => {
+    if (results.length === 0) return null;
+    
+    const allSuccess = results.every(r => r.success);
+    const accountApiSuccess = results.find(r => r.name === 'Account Management API')?.success || false;
+    const legacyApiSuccess = results.find(r => r.name === 'Legacy My Business API')?.success || false;
+    
+    if (allSuccess) {
+      return (
+        <Alert className="bg-green-50 border-green-200 mb-4">
+          <CircleCheck className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">All APIs Working Correctly</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Your Google Business Profile APIs are configured correctly and working as expected.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
+    if (accountApiSuccess && !legacyApiSuccess) {
+      return (
+        <Alert className="bg-amber-50 border-amber-200 mb-4">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">Partial API Access</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            Account Management API is working, but Legacy API is failing. This usually indicates you have API access but might not have a Business Profile, or there might be permission issues with the Legacy API.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
+    if (!accountApiSuccess) {
+      return (
+        <Alert className="bg-red-50 border-red-200 mb-4" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API Configuration Issues</AlertTitle>
+          <AlertDescription>
+            The Account Management API is not working. This indicates a fundamental configuration issue with your Google API setup that needs to be addressed.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 space-y-6">
@@ -115,42 +233,45 @@ export default function ApiTestPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button onClick={fetchApiTest}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Try Again
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="mb-2 md:mb-0">
+            <Link href="/dashboard">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Setup Guide
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
+        </div>
         <Button onClick={fetchApiTest} className="mt-2 md:mt-0">
           <RefreshCw className="mr-2 h-4 w-4" />
           Run Diagnostics
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {results.length === 0 ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No Results</AlertTitle>
-            <AlertDescription>No API test results available.</AlertDescription>
-          </Alert>
-        ) : (
-          results.map((result) => (
+      {getOverallStatus()}
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+          <Button onClick={fetchApiTest} className="mt-2">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </Alert>
+      ) : results.length === 0 ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No Results</AlertTitle>
+          <AlertDescription>No API test results available.</AlertDescription>
+        </Alert>
+      ) : (
+        <div className="space-y-4">
+          {results.map((result) => (
             <Card key={result.name} className={cn(
               "border-l-4",
               result.success ? "border-l-green-500" : "border-l-red-500"
@@ -184,6 +305,8 @@ export default function ApiTestPage() {
                       <p className="text-red-600 font-medium">{result.message}</p>
                     )}
                   </div>
+
+                  {getTroubleshootingAdvice(result)}
 
                   <div className="mt-4">
                     <Button 
@@ -230,56 +353,46 @@ export default function ApiTestPage() {
                   {result.success ? (
                     <p>API is working correctly.</p>
                   ) : (
-                    <p>See Google Cloud Console to verify API settings.</p>
+                    <p>See the <Link href="/dashboard" className="underline">Setup Guide</Link> for detailed configuration instructions.</p>
                   )}
                 </div>
               </CardFooter>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-8">
         <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="troubleshooting">
-            <AccordionTrigger>Troubleshooting Tips</AccordionTrigger>
+          <AccordionItem value="apiInfo">
+            <AccordionTrigger>About These APIs</AccordionTrigger>
             <AccordionContent className="space-y-4">
-              <h3 className="text-lg font-medium">Common Issues & Solutions:</h3>
-              
-              <div className="space-y-1">
-                <h4 className="font-medium">404 Not Found Errors</h4>
+              <div className="space-y-2">
+                <h3 className="font-medium">Account Management API</h3>
                 <p className="text-sm text-muted-foreground">
-                  This usually indicates the API endpoint does not exist or you do not have access to it.
-                  Verify that your account has a Google Business Profile associated with it.
+                  This API provides access to basic information about your Google Business Profile accounts.
+                  It's used to retrieve the list of business accounts associated with your Google account and their basic properties.
                 </p>
               </div>
               
-              <div className="space-y-1">
-                <h4 className="font-medium">401 Unauthorized Errors</h4>
+              <div className="space-y-2">
+                <h3 className="font-medium">Legacy My Business API (v4)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Check that your OAuth scopes include <code>https://www.googleapis.com/auth/business.manage</code>
-                  and that your OAuth client ID is properly configured.
+                  This is the core API for accessing business location data, reviews, and other information.
+                  Despite being "legacy", it's currently the most reliable API for accessing business profile data.
+                  This API requires an account ID which is extracted from the Account Management API response.
                 </p>
               </div>
-              
-              <div className="space-y-1">
-                <h4 className="font-medium">403 Forbidden Errors</h4>
-                <p className="text-sm text-muted-foreground">
-                  Make sure the API is enabled in Google Cloud Console and that your project has the necessary permissions.
-                </p>
+
+              <div className="mt-4 text-sm">
+                <p className="font-medium">API Access Requirements:</p>
+                <ul className="list-disc ml-6 mt-1 space-y-1 text-muted-foreground">
+                  <li>Google account with at least one Business Profile</li>
+                  <li>Google Cloud project with the required APIs enabled</li>
+                  <li>OAuth consent screen configured with the business.manage scope</li>
+                  <li>OAuth credentials properly set up in both Google Cloud and Clerk</li>
+                </ul>
               </div>
-              
-              <Button variant="outline" size="sm" asChild>
-                <a 
-                  href="https://console.cloud.google.com/apis/library" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2"
-                >
-                  <span>Open Google Cloud Console</span>
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
