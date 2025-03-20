@@ -10,6 +10,7 @@ export async function GET(request: Request) {
     // Get account ID from query parameter
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get('accountId');
+    const pageSize = searchParams.get('pageSize') || '50'; // Default to 50 results
     
     if (!accountId) {
       return NextResponse.json(
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
     
     // First attempt: Try to get locations using Business Information API
     const locationsResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountResource}/locations`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountResource}/locations?pageSize=${pageSize}`,
       {
         headers: {
           'Authorization': `Bearer ${oauthToken}`,
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
       // If first attempt fails, try alternative approach using the accounts/locations endpoint
       try {
         const alternativeResponse = await fetch(
-          `https://mybusinessaccountmanagement.googleapis.com/v1/${accountResource}/locations`,
+          `https://mybusinessaccountmanagement.googleapis.com/v1/${accountResource}/locations?pageSize=${pageSize}`,
           {
             headers: {
               'Authorization': `Bearer ${oauthToken}`,
@@ -147,4 +148,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

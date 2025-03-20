@@ -13,8 +13,13 @@ interface BusinessAccount {
  * API endpoint to fetch business accounts from Google Business Profile
  * Using the Account Management API which we've confirmed is working
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const pageSize = searchParams.get('pageSize') || '100'; // Default to 100 results
+    const pageToken = searchParams.get('pageToken') || '';
+    
     // Ensure the user is authenticated
     const session = await auth();
     const userId = session.userId;
@@ -59,7 +64,14 @@ export async function GET() {
     const oauthToken = data[0].token;
     
     // Fetch accounts from the Account Management API
-    const accountsResponse = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
+    let accountsUrl = `https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=${pageSize}`;
+    
+    // Add pageToken if provided
+    if (pageToken) {
+      accountsUrl += `&pageToken=${pageToken}`;
+    }
+    
+    const accountsResponse = await fetch(accountsUrl, {
       headers: {
         'Authorization': `Bearer ${oauthToken}`,
         'Accept': 'application/json',
@@ -94,7 +106,8 @@ export async function GET() {
       message: 'Successfully retrieved business accounts',
       totalAccounts: formattedAccounts.length,
       accounts: formattedAccounts,
-      nextPageToken: accountsData.nextPageToken || null
+      nextPageToken: accountsData.nextPageToken || null,
+      pageSize: parseInt(pageSize)
     });
     
   } catch (error) {

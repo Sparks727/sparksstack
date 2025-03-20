@@ -24,7 +24,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronLeft } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import React from 'react';
 
 interface BusinessAccount {
   id: string;
@@ -34,6 +36,7 @@ interface BusinessAccount {
   role: string;
   fullResource: string;
   verificationState?: string;
+  reviewCount?: number;
   performance?: {
     impressions: number;
     searches: number;
@@ -88,6 +91,40 @@ export default function BusinessAccountsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter data based on search query
+  const filteredData = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return accounts;
+    }
+    
+    const lowercaseQuery = searchQuery.toLowerCase();
+    
+    return accounts.filter(account => {
+      // Search in name
+      if (account.name?.toLowerCase().includes(lowercaseQuery)) {
+        return true;
+      }
+      
+      // Search in account number
+      if (account.accountNumber?.toLowerCase().includes(lowercaseQuery)) {
+        return true;
+      }
+      
+      // Search in verification state
+      if (account.verificationState?.toLowerCase().includes(lowercaseQuery)) {
+        return true;
+      }
+      
+      // Search in type
+      if (account.type?.toLowerCase().includes(lowercaseQuery)) {
+        return true;
+      }
+      
+      return false;
+    });
+  }, [accounts, searchQuery]);
 
   // Define table columns - only the ones specified by the user
   const columns: ColumnDef<BusinessAccount>[] = [
@@ -149,6 +186,28 @@ export default function BusinessAccountsPage() {
             </span>
           </div>
         )
+      },
+    },
+    {
+      accessorKey: "reviewCount",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Reviews
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("reviewCount");
+        return (
+          <div className="text-right font-medium">
+            {value !== undefined ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
       },
     },
     {
@@ -364,7 +423,7 @@ export default function BusinessAccountsPage() {
 
   // Initialize the account table
   const table = useReactTable({
-    data: accounts,
+    data: filteredData,
     columns,
     state: {
       sorting,
@@ -392,12 +451,17 @@ export default function BusinessAccountsPage() {
     onSortingChange: setSorting,
   });
 
+  // Set pagination to show more rows per page
+  useEffect(() => {
+    table.setPageSize(50); // Increased from the default (usually 10)
+  }, [table]);
+
   async function fetchBusinessAccounts() {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/google/business-accounts');
+      const response = await fetch('/api/google/business-accounts?pageSize=100'); // Request more accounts
       const data = await response.json();
       
       if (!response.ok) {
@@ -408,25 +472,55 @@ export default function BusinessAccountsPage() {
         // Store accounts temporarily
         const fetchedAccounts = data.accounts;
         
-        // Fetch performance metrics for each account
+        // Fetch performance metrics and review counts for each account
         await Promise.all(
           fetchedAccounts.map(async (account: BusinessAccount) => {
             try {
               setLoadingPerformance(true);
+              
+              // Fetch performance metrics
               const perfResponse = await fetch(`/api/google/business-performance?accountId=${account.id}`);
               const perfData = await perfResponse.json();
               
               if (perfResponse.ok && perfData.success) {
                 account.performance = perfData.metrics;
               }
+              
+              // Fetch reviews count for the first location of each account
+              try {
+                // First we need to get a location ID for this account
+                const locationsResponse = await fetch(`/api/google/business-locations?accountId=${account.id}&pageSize=50`); // Request more locations
+                const locationsData = await locationsResponse.json();
+                
+                if (locationsResponse.ok && locationsData.success && locationsData.locations && locationsData.locations.length > 0) {
+                  // Get the first location's ID from its name property (e.g., "accounts/123/locations/456")
+                  const locationIdMatch = locationsData.locations[0].name.match(/locations\/([^/]+)$/);
+                  
+                  if (locationIdMatch && locationIdMatch[1]) {
+                    const locationId = locationIdMatch[1];
+                    
+                    // Now fetch the reviews count for this location
+                    const reviewsResponse = await fetch(`/api/google/business-reviews?accountId=${account.id}&locationId=${locationId}&pageSize=1`);
+                    const reviewsData = await reviewsResponse.json();
+                    
+                    if (reviewsResponse.ok && reviewsData.success) {
+                      account.reviewCount = reviewsData.totalReviewCount || 0;
+                    }
+                  }
+                }
+              } catch (reviewsError) {
+                console.error(`Error fetching reviews for account ${account.id}:`, reviewsError);
+                // Don't fail if reviews count fetch fails
+              }
+              
             } catch (err) {
-              console.error(`Error fetching performance for account ${account.id}:`, err);
-              // Don't fail the entire operation if one performance fetch fails
+              console.error(`Error fetching data for account ${account.id}:`, err);
+              // Don't fail the entire operation if one account fetch fails
             }
           })
         );
         
-        // Set the final accounts with performance data
+        // Set the final accounts with performance data and review counts
         setAccounts(fetchedAccounts);
       } else {
         setError('No accounts found or unexpected response format');
@@ -567,6 +661,17 @@ export default function BusinessAccountsPage() {
                 </Alert>
               )}
 
+              {/* Add search input */}
+              <div className="relative w-full md:w-1/3">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search accounts..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
               {loading ? (
                 <div className="space-y-3">
                   <Skeleton className="h-12 w-full" />
@@ -625,23 +730,39 @@ export default function BusinessAccountsPage() {
                       Showing {table.getFilteredRowModel().rows.length} of{" "}
                       {accounts.length} account(s)
                     </div>
-                    <div className="space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-muted-foreground">
+                        Rows per page: 
+                      </span>
+                      <select
+                        className="h-8 w-16 rounded border border-input bg-background"
+                        value={table.getState().pagination.pageSize}
+                        onChange={(e) => table.setPageSize(Number(e.target.value))}
                       >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                      >
-                        Next
-                      </Button>
+                        {[10, 20, 50, 100].map((pageSize) => (
+                          <option key={pageSize} value={pageSize}>
+                            {pageSize}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => table.previousPage()}
+                          disabled={!table.getCanPreviousPage()}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => table.nextPage()}
+                          disabled={!table.getCanNextPage()}
+                        >
+                          Next
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -650,12 +771,15 @@ export default function BusinessAccountsPage() {
               <div className="text-sm mt-6">
                 <h4 className="font-medium mb-1">Performance Metrics (Last 30 Days):</h4>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Impressions: Total views of your business profile</li>
-                  <li>Searches: Number of times your business appeared in search results</li>
-                  <li>Website Clicks: Users who clicked through to your website</li>
-                  <li>Phone Calls: Users who clicked to call your business</li>
-                  <li>Direction Requests: Users who requested directions to your location</li>
+                  <li><span className="font-medium">Impressions:</span> Total views of your business profile on Google Search and Maps</li>
+                  <li><span className="font-medium">Searches:</span> Number of times your business appeared in search results</li>
+                  <li><span className="font-medium">Website Clicks:</span> Users who clicked through to your website from your Business Profile</li>
+                  <li><span className="font-medium">Phone Calls:</span> Users who clicked to call your business from your Business Profile</li>
+                  <li><span className="font-medium">Direction Requests:</span> Users who requested directions to your location from Google Maps</li>
                 </ul>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  These metrics are sourced from the Google Business Profile Performance API. Make sure this API and the My Business Business Information API are enabled in your Google Cloud project.
+                </p>
               </div>
             </div>
           ) : (
