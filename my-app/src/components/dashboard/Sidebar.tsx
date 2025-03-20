@@ -12,6 +12,31 @@ import {
   Wrench
 } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
+import { cn } from '@/lib/utils';
+
+interface NavLinkProps {
+  href: string;
+  children: React.ReactNode;
+}
+
+function NavLink({ href, children }: NavLinkProps) {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "block px-3 py-2 rounded-md text-sm",
+        isActive 
+          ? "bg-gray-100 text-gray-900 font-medium" 
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
 
 const Sidebar = () => {
   const pathname = usePathname() || '';
@@ -89,6 +114,17 @@ const Sidebar = () => {
             >
               <LogOut className="h-5 w-5" />
             </Link>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <h2 className="text-sm font-semibold">Google Business</h2>
+          <div className="mt-2 space-y-1">
+            <NavLink href="/dashboard/google">Dashboard</NavLink>
+            <NavLink href="/dashboard/google/business-details">Business Details</NavLink>
+            <NavLink href="/dashboard/google/reviews">Reviews</NavLink>
+            <NavLink href="/dashboard/api-test">API Status</NavLink>
+            <NavLink href="/dashboard/api-direct-test">API Diagnostics</NavLink>
           </div>
         </div>
       </div>
