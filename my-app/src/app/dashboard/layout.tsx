@@ -3,7 +3,6 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { redirect } from 'next/navigation';
-import Sidebar from '@/components/dashboard/Sidebar';
 
 export default function DashboardLayout({
   children,
@@ -30,17 +29,10 @@ export default function DashboardLayout({
 
   // Render the dashboard with the protected children
   return (
-    <>
-      <div className="relative flex min-h-screen flex-col">
-        <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <Sidebar />
-          <main className="flex w-full flex-col overflow-hidden">
-            <div className="container flex-1 pb-12 pt-4">
-              {children}
-            </div>
-          </main>
-        </div>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {children}
       </div>
-    </>
+    </div>
   );
 } 
