@@ -371,7 +371,7 @@ export default function ApiTestPage() {
                 <h3 className="font-medium">Account Management API</h3>
                 <p className="text-sm text-muted-foreground">
                   This API provides access to basic information about your Google Business Profile accounts.
-                  It's used to retrieve the list of business accounts associated with your Google account and their basic properties.
+                  It&apos;s used to retrieve the list of business accounts associated with your Google account and their basic properties.
                 </p>
               </div>
               
@@ -379,7 +379,7 @@ export default function ApiTestPage() {
                 <h3 className="font-medium">Legacy My Business API (v4)</h3>
                 <p className="text-sm text-muted-foreground">
                   This is the core API for accessing business location data, reviews, and other information.
-                  Despite being "legacy", it's currently the most reliable API for accessing business profile data.
+                  Despite being &quot;legacy&quot;, it&apos;s currently the most reliable API for accessing business profile data.
                   This API requires an account ID which is extracted from the Account Management API response.
                 </p>
               </div>
