@@ -93,6 +93,7 @@ export default function GoogleBusinessProfileTestPage() {
     try {
       // First attempt: Try to get the direct OAuth token from the user object
       let googleToken;
+      let tokenSource = '';
       
       if (user?.externalAccounts) {
         const googleAccount = user.externalAccounts.find(
@@ -101,10 +102,11 @@ export default function GoogleBusinessProfileTestPage() {
         
         if (googleAccount) {
           try {
-            // Access the OAuth token directly from the OAuth account
+            // Try to access the raw OAuth token directly - this might be deprecated
             // @ts-expect-error - getToken is available but might not be typed correctly
-            googleToken = await googleAccount.getToken();
-            console.log('Got direct OAuth token from Google account object:', !!googleToken);
+            googleToken = await googleAccount.getToken({raw: true});
+            console.log('Got direct raw OAuth token from Google account object:', !!googleToken);
+            tokenSource = 'direct-raw';
             
             if (googleToken) {
               console.log('Direct OAuth token type:', typeof googleToken);
@@ -112,8 +114,45 @@ export default function GoogleBusinessProfileTestPage() {
               console.log('Direct OAuth token prefix:', googleToken.substring(0, 10) + '...');
             }
           } catch (directTokenError) {
-            console.error('Error getting direct token from account:', directTokenError);
+            console.error('Error getting direct raw token from account:', directTokenError);
+            
+            try {
+              // Try alternative approach without raw parameter
+              // @ts-expect-error - getToken is available but might not be typed correctly
+              googleToken = await googleAccount.getToken();
+              console.log('Got standard token from Google account object:', !!googleToken);
+              tokenSource = 'direct-standard';
+            } catch (standardTokenError) {
+              console.error('Error getting standard token from account:', standardTokenError);
+            }
           }
+        }
+      }
+      
+      // Get user session token to try alternative approach
+      if (!googleToken && user) {
+        try {
+          // @ts-expect-error - getToken might be available on user
+          const sessionToken = await user.getToken();
+          console.log('Got user session token:', !!sessionToken);
+          
+          if (sessionToken) {
+            // Use the session token to make a request to your own API endpoint
+            // that exchanges it for an OAuth token
+            console.log('Would need a backend endpoint to exchange this token for OAuth token');
+            
+            // This would be where you'd call your API:
+            // const response = await fetch('/api/google/oauth-token', {
+            //   headers: { Authorization: `Bearer ${sessionToken}` }
+            // });
+            // if (response.ok) {
+            //   const data = await response.json();
+            //   googleToken = data.oauthToken;
+            //   tokenSource = 'backend-exchange';
+            // }
+          }
+        } catch (sessionTokenError) {
+          console.error('Error getting session token:', sessionTokenError);
         }
       }
       
@@ -123,6 +162,7 @@ export default function GoogleBusinessProfileTestPage() {
           // Use the custom JWT template specifically created for Google OAuth
           googleToken = await getToken({ template: 'google_oauth' });
           console.log('Using custom JWT template token for Google OAuth');
+          tokenSource = 'custom-template';
           
           if (googleToken) {
             // If the token is in JSON format with a token property, extract it
@@ -141,12 +181,15 @@ export default function GoogleBusinessProfileTestPage() {
                 if (tokenData.google_oauth_access_token) {
                   console.log('Found google_oauth_access_token in template response');
                   googleToken = tokenData.google_oauth_access_token;
+                  tokenSource = 'template-json-oauth';
                 } else if (tokenData.access_token) {
                   console.log('Found access_token in template response');
                   googleToken = tokenData.access_token;
+                  tokenSource = 'template-json-access';
                 } else if (tokenData.token) {
                   console.log('Found token in template response');
                   googleToken = tokenData.token;
+                  tokenSource = 'template-json-token';
                 }
               } else if (googleToken.includes('.') && googleToken.split('.').length === 3) {
                 // Looks like a JWT, try to decode it to see if it contains an access token
@@ -157,6 +200,7 @@ export default function GoogleBusinessProfileTestPage() {
                   if (payload.access_token) {
                     console.log('Found access_token in JWT payload');
                     googleToken = payload.access_token;
+                    tokenSource = 'template-jwt-payload';
                   }
                 } catch (decodeError) {
                   console.error('Error decoding JWT:', decodeError);
@@ -165,6 +209,7 @@ export default function GoogleBusinessProfileTestPage() {
             } catch (parseError) {
               // Token is not JSON, use as is
               console.log('Token parsing error, using as is:', parseError);
+              tokenSource = 'template-raw';
             }
           }
         } catch (templateError) {
@@ -172,40 +217,32 @@ export default function GoogleBusinessProfileTestPage() {
         }
       }
       
-      // Third attempt: Try to access the token directly from sessionClaims
-      if (!googleToken && user) {
-        try {
-          // @ts-ignore - sessionClaims might exist on user object
-          const sessionClaims = user.sessionClaims;
-          
-          if (sessionClaims) {
-            console.log('Found sessionClaims, looking for OAuth tokens');
-            // Log the available keys for debugging
-            console.log('sessionClaims keys:', Object.keys(sessionClaims));
-            
-            // Look for OAuth tokens in various locations
-            const oauthTokens = 
-              // @ts-ignore - accessing possible locations
-              sessionClaims.oauth_tokens || 
-              // @ts-ignore - accessing possible locations
-              sessionClaims.oauth_access_tokens || 
-              // @ts-ignore - accessing possible locations
-              sessionClaims.google_oauth;
-              
-            if (oauthTokens && oauthTokens.google) {
-              console.log('Found direct OAuth token in sessionClaims');
-              googleToken = oauthTokens.google;
-            }
-          }
-        } catch (sessionClaimsError) {
-          console.error('Error accessing session claims:', sessionClaimsError);
-        }
-      }
-      
       // Last fallback: standard oauth_google template
       if (!googleToken) {
-        googleToken = await getToken({ template: 'oauth_google' });
-        console.log('Using standard Clerk JWT template token');
+        try {
+          googleToken = await getToken({ template: 'oauth_google' });
+          console.log('Using standard Clerk JWT template token');
+          tokenSource = 'standard-template';
+          
+          // For completeness, also try to parse this token if it's a JWT
+          if (googleToken && googleToken.includes('.') && googleToken.split('.').length === 3) {
+            try {
+              const payload = JSON.parse(atob(googleToken.split('.')[1]));
+              console.log('Standard template JWT payload keys:', Object.keys(payload));
+              
+              // Check if it contains an OAuth token
+              if (payload.access_token) {
+                console.log('Found access_token in standard template JWT payload');
+                googleToken = payload.access_token;
+                tokenSource = 'standard-jwt-payload';
+              }
+            } catch (decodeError) {
+              console.error('Error decoding standard JWT:', decodeError);
+            }
+          }
+        } catch (error) {
+          console.error('Error getting standard oauth token:', error);
+        }
       }
       
       if (!googleToken) {
@@ -220,6 +257,9 @@ export default function GoogleBusinessProfileTestPage() {
         return;
       }
       
+      // Add token source to the debug info
+      console.log('Final token source:', tokenSource);
+      
       // Initialize the service with the token
       const service = new GoogleBusinessService(googleToken);
       
@@ -229,7 +269,7 @@ export default function GoogleBusinessProfileTestPage() {
       // Add detailed debug logging of the result
       console.log('API Test result:', JSON.stringify(result, null, 2));
       
-      // Update debug info with the result
+      // Update debug info with the result and token source
       setDebugInfo(prev => ({
         ...prev,
         apiTest: {
@@ -237,7 +277,11 @@ export default function GoogleBusinessProfileTestPage() {
           message: result.message,
           status: result.status,
           error: result.error,
-          details: result.details || result.data
+          details: {
+            ...(typeof result.details === 'object' ? result.details : {}),
+            ...(result.data ? { data: result.data } : {}),
+            tokenSource: tokenSource
+          }
         }
       }));
       
@@ -287,6 +331,24 @@ export default function GoogleBusinessProfileTestPage() {
                   variant="outline"
                 >
                   {apiTesting ? 'Testing API...' : 'Test API Connection'}
+                </Button>
+                
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    window.open('/api/google/business-profile', '_blank');
+                  }}
+                >
+                  Test Server-Side API
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    window.open('/api/debug-google-token', '_blank');
+                  }}
+                >
+                  Debug Token Info
                 </Button>
               </div>
             </div>
