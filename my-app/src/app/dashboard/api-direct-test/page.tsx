@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CircleCheck, CircleX, CircleAlert, ExternalLink, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CircleCheck, CircleX, ExternalLink, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 
@@ -86,7 +84,7 @@ export default function ApiTestPage() {
   const formatJSON = (data: unknown): string => {
     try {
       return JSON.stringify(data, null, 2);
-    } catch (e) {
+    } catch {
       return String(data);
     }
   };
@@ -213,7 +211,7 @@ export default function ApiTestPage() {
                           </div>
                         )}
                         
-                        {result.responseBody && (
+                        {typeof result.responseBody !== 'undefined' && (
                           <div className="space-y-2">
                             <h4 className="text-sm font-medium">Response Body:</h4>
                             <pre className="bg-slate-100 dark:bg-slate-800 p-4 rounded text-xs overflow-x-auto">
@@ -251,7 +249,7 @@ export default function ApiTestPage() {
               <div className="space-y-1">
                 <h4 className="font-medium">404 Not Found Errors</h4>
                 <p className="text-sm text-muted-foreground">
-                  This usually indicates the API endpoint doesn't exist or you don't have access to it.
+                  This usually indicates the API endpoint does not exist or you do not have access to it.
                   Verify that your account has a Google Business Profile associated with it.
                 </p>
               </div>
