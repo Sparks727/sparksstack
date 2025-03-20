@@ -500,11 +500,15 @@ export default function BusinessAccountsPage() {
                     const locationId = locationIdMatch[1];
                     
                     // Now fetch the reviews count for this location
+                    // Our updated API now supports both new and legacy Google API endpoints
                     const reviewsResponse = await fetch(`/api/google/business-reviews?accountId=${account.id}&locationId=${locationId}&pageSize=1`);
                     const reviewsData = await reviewsResponse.json();
                     
                     if (reviewsResponse.ok && reviewsData.success) {
                       account.reviewCount = reviewsData.totalReviewCount || 0;
+                      console.log(`Reviews count for ${account.name}: ${account.reviewCount}`);
+                    } else {
+                      console.warn(`Failed to fetch reviews count for ${account.name}:`, reviewsData.error || 'Unknown error');
                     }
                   }
                 }

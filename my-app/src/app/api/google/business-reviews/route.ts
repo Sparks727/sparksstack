@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 /**
  * API endpoint to fetch reviews for a business location
- * This uses the Google My Business API to get reviews
+ * This uses the Google Business Profile API to get reviews
  */
 export async function GET(request: Request) {
   try {
@@ -65,43 +65,94 @@ export async function GET(request: Request) {
     
     const oauthToken = data[0].token;
     
-    // Fetch reviews using the Google My Business API
-    const reviewsUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews?pageSize=${pageSize}&orderBy=${orderBy}${pageToken ? `&pageToken=${pageToken}` : ''}`;
+    // Construct the full location name
+    const locationName = `accounts/${accountId}/locations/${locationId}`;
     
-    const reviewsResponse = await fetch(reviewsUrl, {
-      headers: {
-        'Authorization': `Bearer ${oauthToken}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (reviewsResponse.ok) {
-      const reviewsData = await reviewsResponse.json();
+    // Try the newer Business Profile API first
+    try {
+      // First approach: Use the newer mybusinessreviews.googleapis.com API
+      const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/${locationName}/reviews?pageSize=${pageSize}${pageToken ? `&pageToken=${pageToken}` : ''}`;
       
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully retrieved reviews',
-        locationId,
-        accountId,
-        reviews: reviewsData.reviews || [],
-        totalReviewCount: reviewsData.totalReviewCount || 0,
-        averageRating: reviewsData.averageRating || 0,
-        nextPageToken: reviewsData.nextPageToken || null
+      const reviewsResponse = await fetch(reviewsUrl, {
+        headers: {
+          'Authorization': `Bearer ${oauthToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
-    } else {
-      // Handle error response
-      const errorData = await reviewsResponse.json().catch(() => ({}));
+
+      if (reviewsResponse.ok) {
+        const reviewsData = await reviewsResponse.json();
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully retrieved reviews with new API',
+          locationId,
+          accountId,
+          reviews: reviewsData.reviews || [],
+          totalReviewCount: reviewsData.totalReviewCount || 0,
+          averageRating: reviewsData.averageRating || 0,
+          nextPageToken: reviewsData.nextPageToken || null
+        });
+      } else {
+        // If the first approach fails, try a fallback approach
+        throw new Error(`New API failed with status ${reviewsResponse.status}`);
+      }
+    } catch (newApiError) {
+      console.warn("New reviews API failed, trying legacy API:", newApiError);
       
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to fetch reviews',
-        locationId,
-        accountId,
-        details: errorData,
-        status: reviewsResponse.status,
-        message: 'Reviews API endpoint failed. Make sure the Google My Business API is enabled and you have proper permissions.'
-      }, { status: reviewsResponse.status });
+      // Fallback to the legacy API
+      try {
+        // Fallback: Try the legacy Google My Business API
+        const legacyReviewsUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews?pageSize=${pageSize}&orderBy=${orderBy}${pageToken ? `&pageToken=${pageToken}` : ''}`;
+        
+        const legacyResponse = await fetch(legacyReviewsUrl, {
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (legacyResponse.ok) {
+          const legacyData = await legacyResponse.json();
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully retrieved reviews with legacy API',
+            locationId,
+            accountId,
+            reviews: legacyData.reviews || [],
+            totalReviewCount: legacyData.totalReviewCount || 0,
+            averageRating: legacyData.averageRating || 0,
+            nextPageToken: legacyData.nextPageToken || null,
+            usingLegacyApi: true
+          });
+        } else {
+          // Both APIs failed
+          const errorData = await legacyResponse.json().catch(() => ({}));
+          
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to fetch reviews from both new and legacy APIs',
+            locationId,
+            accountId,
+            details: errorData,
+            status: legacyResponse.status,
+            message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+          }, { status: legacyResponse.status });
+        }
+      } catch (legacyError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to fetch reviews from both APIs',
+          newApiError: newApiError instanceof Error ? newApiError.message : 'Unknown error with new API',
+          legacyError: legacyError instanceof Error ? legacyError.message : 'Unknown error with legacy API',
+          locationId,
+          accountId,
+          message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+        }, { status: 500 });
+      }
     }
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -171,40 +222,88 @@ export async function POST(request: Request) {
     
     const oauthToken = data[0].token;
     
-    // Reply to the review using the Google My Business API
-    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`;
+    // Construct the full location and review name
+    const reviewName = `accounts/${accountId}/locations/${locationId}/reviews/${reviewId}`;
     
-    const replyResponse = await fetch(replyUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${oauthToken}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        comment: comment
-      })
-    });
-
-    if (replyResponse.ok) {
-      const replyData = await replyResponse.json();
+    // Try the newer Business Profile API first
+    try {
+      // First approach: Use the newer mybusinessreviews API
+      const replyUrl = `https://mybusinessreviews.googleapis.com/v1/${reviewName}:reply`;
       
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully replied to review',
-        reply: replyData
+      const replyResponse = await fetch(replyUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${oauthToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          comment: comment
+        })
       });
-    } else {
-      // Handle error response
-      const errorData = await replyResponse.json().catch(() => ({}));
+
+      if (replyResponse.ok) {
+        const replyData = await replyResponse.json();
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully replied to review with new API',
+          reply: replyData
+        });
+      } else {
+        // If the first approach fails, try a fallback approach
+        throw new Error(`New API failed with status ${replyResponse.status}`);
+      }
+    } catch (newApiError) {
+      console.warn("New reviews API failed for reply, trying legacy API:", newApiError);
       
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to reply to review',
-        details: errorData,
-        status: replyResponse.status,
-        message: 'Review reply API endpoint failed. Make sure the Google My Business API is enabled and you have proper permissions.'
-      }, { status: replyResponse.status });
+      // Fallback to the legacy API
+      try {
+        // Fallback: Try the legacy Google My Business API
+        const legacyReplyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`;
+        
+        const legacyResponse = await fetch(legacyReplyUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: comment
+          })
+        });
+
+        if (legacyResponse.ok) {
+          const legacyData = await legacyResponse.json();
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully replied to review with legacy API',
+            reply: legacyData,
+            usingLegacyApi: true
+          });
+        } else {
+          // Both APIs failed
+          const errorData = await legacyResponse.json().catch(() => ({}));
+          
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to reply to review using both new and legacy APIs',
+            details: errorData,
+            status: legacyResponse.status,
+            message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+          }, { status: legacyResponse.status });
+        }
+      } catch (legacyError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to reply to review using both APIs',
+          newApiError: newApiError instanceof Error ? newApiError.message : 'Unknown error with new API',
+          legacyError: legacyError instanceof Error ? legacyError.message : 'Unknown error with legacy API',
+          message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+        }, { status: 500 });
+      }
     }
   } catch (error) {
     console.error('Error replying to review:', error);
@@ -276,33 +375,76 @@ export async function DELETE(request: Request) {
     
     const oauthToken = data[0].token;
     
-    // Delete the review reply using the Google My Business API
-    const deleteUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`;
+    // Construct the full location and review name
+    const reviewName = `accounts/${accountId}/locations/${locationId}/reviews/${reviewId}`;
     
-    const deleteResponse = await fetch(deleteUrl, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${oauthToken}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (deleteResponse.ok) {
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully deleted review reply'
-      });
-    } else {
-      // Handle error response
-      const errorData = await deleteResponse.json().catch(() => ({}));
+    // Try the newer Business Profile API first
+    try {
+      // First approach: Use the newer mybusinessreviews API
+      const deleteReplyUrl = `https://mybusinessreviews.googleapis.com/v1/${reviewName}:deleteReply`;
       
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to delete review reply',
-        details: errorData,
-        status: deleteResponse.status,
-        message: 'Delete review reply API endpoint failed. Make sure the Google My Business API is enabled and you have proper permissions.'
-      }, { status: deleteResponse.status });
+      const deleteResponse = await fetch(deleteReplyUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${oauthToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (deleteResponse.ok) {
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully deleted review reply with new API'
+        });
+      } else {
+        // If the first approach fails, try a fallback approach
+        throw new Error(`New API failed with status ${deleteResponse.status}`);
+      }
+    } catch (newApiError) {
+      console.warn("New reviews API failed for delete reply, trying legacy API:", newApiError);
+      
+      // Fallback to the legacy API
+      try {
+        // Fallback: Try the legacy Google My Business API
+        const legacyDeleteUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`;
+        
+        const legacyResponse = await fetch(legacyDeleteUrl, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (legacyResponse.ok) {
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully deleted review reply with legacy API',
+            usingLegacyApi: true
+          });
+        } else {
+          // Both APIs failed
+          const errorData = await legacyResponse.json().catch(() => ({}));
+          
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to delete review reply using both new and legacy APIs',
+            details: errorData,
+            status: legacyResponse.status,
+            message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+          }, { status: legacyResponse.status });
+        }
+      } catch (legacyError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to delete review reply using both APIs',
+          newApiError: newApiError instanceof Error ? newApiError.message : 'Unknown error with new API',
+          legacyError: legacyError instanceof Error ? legacyError.message : 'Unknown error with legacy API',
+          message: 'Make sure either the Business Review Management API or Google My Business API is enabled and you have proper permissions.'
+        }, { status: 500 });
+      }
     }
   } catch (error) {
     console.error('Error deleting review reply:', error);
