@@ -1,5 +1,17 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Define interface for external account from Clerk API
+interface ClerkExternalAccount {
+  id: string;
+  provider: string;
+  email_address?: string;
+  approved_scopes?: string[];
+  access_token?: string;
+  provider_user_id?: string;
+  // Allow for additional properties with more specific types
+  [key: string]: string | string[] | number | boolean | undefined;
+}
 
 /**
  * Debug endpoint for troubleshooting Google OAuth tokens
@@ -8,7 +20,8 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get the current user session from Clerk
-    const { userId } = auth();
+    const session = await auth();
+    const userId = session.userId;
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized - No user session found' },
@@ -16,12 +29,26 @@ export async function GET() {
       );
     }
     
-    // Get the user from Clerk
-    const user = await clerkClient.users.getUser(userId);
+    // Get the user from Clerk API directly (avoiding clerkClient for type safety)
+    const userResponse = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!userResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch user data from Clerk' },
+        { status: 500 }
+      );
+    }
+    
+    const user = await userResponse.json();
     
     // Find the Google OAuth account if connected
-    const googleAccount = user.externalAccounts.find(
-      (account) => account.provider === 'google'
+    const googleAccount = user.external_accounts?.find(
+      (account: ClerkExternalAccount) => account.provider === 'google'
     );
     
     if (!googleAccount) {
@@ -35,25 +62,25 @@ export async function GET() {
     const debugInfo = {
       userId,
       googleAccountId: googleAccount.id,
-      googleEmail: googleAccount.emailAddress,
-      scopes: googleAccount.approvedScopes,
-      hasBusinessManageScope: googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage'),
+      googleEmail: googleAccount.email_address,
+      scopes: googleAccount.approved_scopes,
+      hasBusinessManageScope: googleAccount.approved_scopes?.includes('https://www.googleapis.com/auth/business.manage'),
       // We won't expose the actual tokens in the response for security reasons
-      hasToken: !!googleAccount.accessToken,
+      hasToken: !!googleAccount.access_token,
       // Add token prefix for debugging (first 10 chars)
-      tokenPrefix: googleAccount.accessToken ? `${googleAccount.accessToken.substring(0, 10)}...` : null,
-      tokenLength: googleAccount.accessToken ? googleAccount.accessToken.length : 0,
+      tokenPrefix: googleAccount.access_token ? `${googleAccount.access_token.substring(0, 10)}...` : null,
+      tokenLength: googleAccount.access_token ? googleAccount.access_token.length : 0,
       // Add some info about the token format
-      tokenFormat: googleAccount.accessToken ? {
-        startsWithEyJ: googleAccount.accessToken.startsWith('eyJ'),
-        containsDots: googleAccount.accessToken.includes('.'),
-        dotCount: googleAccount.accessToken.split('.').length - 1,
-        isProbablyJwt: googleAccount.accessToken.startsWith('eyJ') && googleAccount.accessToken.split('.').length === 3,
-        isProbablyRawOAuth: !googleAccount.accessToken.startsWith('eyJ') && !googleAccount.accessToken.includes('.'),
+      tokenFormat: googleAccount.access_token ? {
+        startsWithEyJ: googleAccount.access_token.startsWith('eyJ'),
+        containsDots: googleAccount.access_token.includes('.'),
+        dotCount: googleAccount.access_token.split('.').length - 1,
+        isProbablyJwt: googleAccount.access_token.startsWith('eyJ') && googleAccount.access_token.split('.').length === 3,
+        isProbablyRawOAuth: !googleAccount.access_token.startsWith('eyJ') && !googleAccount.access_token.includes('.'),
       } : null,
       // Try to extract provider specific info
-      providerUserId: googleAccount.providerUserId,
-      publicMetadata: user.publicMetadata,
+      providerUserId: googleAccount.provider_user_id,
+      publicMetadata: user.public_metadata,
     };
     
     // Return debug info
