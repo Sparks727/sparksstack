@@ -277,7 +277,7 @@ export default function ApiDirectTestPage() {
                         </div>
                       )}
                       
-                      {result.responseBody && (
+                      {result.responseBody !== null && (
                         <div>
                           <h4 className="font-medium mb-1">Response Body</h4>
                           <ScrollArea className="h-[200px] w-full">
