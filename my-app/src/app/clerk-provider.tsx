@@ -9,7 +9,9 @@ export function ClerkClientProvider({
   children: ReactNode 
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInFallbackRedirectUrl="/dashboard"
+    >
       {children}
     </ClerkProvider>
   );

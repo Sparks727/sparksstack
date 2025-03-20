@@ -84,7 +84,7 @@ const Sidebar = () => {
               <span className="ml-3 text-sm font-medium text-gray-700">Account</span>
             </div>
             <Link 
-              href="/api/auth/signout"
+              href="/sign-out"
               className="p-2 text-gray-500 rounded-lg hover:bg-gray-100"
             >
               <LogOut className="h-5 w-5" />
