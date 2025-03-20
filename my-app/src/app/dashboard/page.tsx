@@ -90,37 +90,62 @@ export default function GoogleBusinessProfileTestPage() {
   async function testApiConnection() {
     setApiTesting(true);
     try {
-      // Try to get the direct OAuth token from the user's Google account
-      const googleAccount = user?.externalAccounts?.find(
-        (account) => account.provider === 'google'
-      );
-      
-      if (!googleAccount) {
-        setDebugInfo(prev => ({
-          ...prev,
-          apiTest: {
-            success: false,
-            message: 'No Google account connected',
-            error: 'Please connect your Google account in Clerk settings'
-          }
-        }));
-        return;
-      }
-      
-      // Try to get the raw token directly from the account
+      // Try to get the token from the custom JWT template first
       let googleToken;
       try {
-        // @ts-ignore - getToken is available but might not be typed correctly
-        googleToken = await googleAccount.getToken();
-        console.log('Got direct token from Google account:', !!googleToken);
-      } catch (tokenError) {
-        console.error('Error getting direct token:', tokenError);
+        // Use the custom JWT template specifically created for Google OAuth
+        // Replace 'google_oauth' with the actual name of your template if different
+        googleToken = await getToken({ template: 'google_oauth' });
+        console.log('Using custom JWT template token for Google OAuth');
+        
+        if (googleToken) {
+          // If the token is in JSON format with a token property, extract it
+          try {
+            const tokenData = JSON.parse(googleToken);
+            if (tokenData.google_oauth_access_token) {
+              console.log('Extracted direct OAuth token from custom template');
+              googleToken = tokenData.google_oauth_access_token;
+            }
+          } catch {
+            // Token is not JSON, use as is
+            console.log('Token is not in JSON format, using as is');
+          }
+        }
+      } catch (templateError) {
+        console.error('Error getting token from custom template:', templateError);
       }
       
-      // If direct token fails, fallback to Clerk's JWT template
+      // If custom template fails, try to get the token directly from the Google account
       if (!googleToken) {
-        googleToken = await getToken({ template: 'oauth_google' });
-        console.log('Using Clerk JWT template token');
+        const googleAccount = user?.externalAccounts?.find(
+          (account) => account.provider === 'google'
+        );
+        
+        if (!googleAccount) {
+          setDebugInfo(prev => ({
+            ...prev,
+            apiTest: {
+              success: false,
+              message: 'No Google account connected',
+              error: 'Please connect your Google account in Clerk settings'
+            }
+          }));
+          return;
+        }
+        
+        try {
+          // @ts-expect-error - getToken is available but might not be typed correctly
+          googleToken = await googleAccount.getToken();
+          console.log('Got direct token from Google account:', !!googleToken);
+        } catch (tokenError) {
+          console.error('Error getting direct token:', tokenError);
+        }
+        
+        // Final fallback to standard oauth_google template
+        if (!googleToken) {
+          googleToken = await getToken({ template: 'oauth_google' });
+          console.log('Using standard Clerk JWT template token');
+        }
       }
       
       if (!googleToken) {
