@@ -24,7 +24,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, ChevronLeft } from "lucide-react";
 
 interface BusinessAccount {
   id: string;
@@ -33,16 +33,63 @@ interface BusinessAccount {
   type: string;
   role: string;
   fullResource: string;
+  verificationState?: string;
+  performance?: {
+    impressions: number;
+    searches: number;
+    conversations: number;
+    directionRequests: number;
+    bookings: number;
+    websiteClicks: number;
+    phoneCalls: number;
+  }
+}
+
+interface BusinessLocation {
+  name: string;
+  title?: string;
+  locationName?: string;
+  storeCode?: string;
+  address?: {
+    locality?: string;
+    administrativeArea?: string;
+    postalCode?: string;
+    addressLines?: string[];
+    regionCode?: string;
+  };
+  primaryPhone?: string;
+  websiteUri?: string;
+  regularHours?: {
+    periods?: Array<{
+      openDay?: string;
+      openTime?: string;
+      closeDay?: string;
+      closeTime?: string;
+    }>;
+  };
+  primaryCategory?: {
+    displayName?: string;
+    categoryId?: string;
+  };
+  labels?: string[];
+  profile?: {
+    description?: string;
+  };
 }
 
 export default function BusinessAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<BusinessAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<BusinessAccount | null>(null);
+  const [locations, setLocations] = useState<BusinessLocation[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingPerformance, setLoadingPerformance] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Define table columns
+  // Define table columns - only the ones specified by the user
   const columns: ColumnDef<BusinessAccount>[] = [
     {
       accessorKey: "name",
@@ -75,47 +122,143 @@ export default function BusinessAccountsPage() {
       cell: ({ row }) => <div>{row.getValue("accountNumber") || "N/A"}</div>,
     },
     {
-      accessorKey: "type",
+      accessorKey: "verificationState",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Type
+            Verification State
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
       },
       cell: ({ row }) => {
-        const type = row.getValue("type") as string;
+        const state = row.getValue("verificationState") as string;
         return (
           <div className="flex items-center">
             <span className={`px-2 py-1 rounded text-xs ${
-              type === 'LOCATION_GROUP' 
+              state === 'VERIFIED' 
                 ? 'bg-green-100 text-green-800' 
-                : type === 'PERSONAL'
-                ? 'bg-blue-100 text-blue-800'
+                : state === 'UNVERIFIED'
+                ? 'bg-yellow-100 text-yellow-800'
                 : 'bg-gray-100 text-gray-800'
             }`}>
-              {getAccountTypeLabel(type)}
+              {getVerificationStateLabel(state)}
             </span>
           </div>
         )
       },
     },
     {
-      accessorKey: "role",
+      accessorKey: "performance.impressions",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Role
+            Impressions
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("performance.impressions");
+        return (
+          <div className="text-right font-medium">
+            {value ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "performance.searches",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Searches
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("performance.searches");
+        return (
+          <div className="text-right font-medium">
+            {value ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "performance.websiteClicks",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Website Clicks
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("performance.websiteClicks");
+        return (
+          <div className="text-right font-medium">
+            {value ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "performance.phoneCalls",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Phone Calls
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("performance.phoneCalls");
+        return (
+          <div className="text-right font-medium">
+            {value ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "performance.directionRequests",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Direction Requests
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const value = row.getValue("performance.directionRequests");
+        return (
+          <div className="text-right font-medium">
+            {value ? Number(value).toLocaleString() : "—"}
+          </div>
+        );
       },
     },
     {
@@ -128,9 +271,9 @@ export default function BusinessAccountsPage() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => handleViewDetails(account)}
+              onClick={() => handleViewLocations(account)}
             >
-              View Details
+              View Locations
             </Button>
           </div>
         )
@@ -138,7 +281,88 @@ export default function BusinessAccountsPage() {
     },
   ];
 
-  // Initialize the table
+  // Define location table columns
+  const locationColumns: ColumnDef<BusinessLocation>[] = [
+    {
+      accessorKey: "locationName",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Location Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const location = row.original;
+        return <div className="font-medium">{location.locationName || location.title || "Unnamed Location"}</div>
+      },
+    },
+    {
+      accessorKey: "address",
+      header: "Address",
+      cell: ({ row }) => {
+        const location = row.original;
+        const address = location.address;
+        if (!address) return <div>No address available</div>;
+        
+        const addressParts = [];
+        if (address.addressLines && address.addressLines.length > 0) {
+          addressParts.push(...address.addressLines);
+        }
+        
+        const cityStateZip = [];
+        if (address.locality) cityStateZip.push(address.locality);
+        if (address.administrativeArea) cityStateZip.push(address.administrativeArea);
+        if (address.postalCode) cityStateZip.push(address.postalCode);
+        
+        if (cityStateZip.length > 0) {
+          addressParts.push(cityStateZip.join(', '));
+        }
+        
+        return <div>{addressParts.join(', ') || 'Address not available'}</div>;
+      },
+    },
+    {
+      accessorKey: "primaryCategory",
+      header: "Category",
+      cell: ({ row }) => {
+        const location = row.original;
+        return <div>{location.primaryCategory?.displayName || "Uncategorized"}</div>;
+      },
+    },
+    {
+      accessorKey: "primaryPhone",
+      header: "Phone",
+      cell: ({ row }) => {
+        const location = row.original;
+        return <div>{location.primaryPhone || "No phone"}</div>;
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const location = row.original;
+        return (
+          <div className="text-right">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleViewLocationDetails(location)}
+            >
+              Details
+            </Button>
+          </div>
+        )
+      },
+    },
+  ];
+
+  // Initialize the account table
   const table = useReactTable({
     data: accounts,
     columns,
@@ -155,6 +379,19 @@ export default function BusinessAccountsPage() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  // Initialize the locations table
+  const locationTable = useReactTable({
+    data: locations,
+    columns: locationColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
+  });
+
   async function fetchBusinessAccounts() {
     setLoading(true);
     setError(null);
@@ -168,7 +405,29 @@ export default function BusinessAccountsPage() {
       }
       
       if (data.success && data.accounts) {
-        setAccounts(data.accounts);
+        // Store accounts temporarily
+        const fetchedAccounts = data.accounts;
+        
+        // Fetch performance metrics for each account
+        await Promise.all(
+          fetchedAccounts.map(async (account: BusinessAccount) => {
+            try {
+              setLoadingPerformance(true);
+              const perfResponse = await fetch(`/api/google/business-performance?accountId=${account.id}`);
+              const perfData = await perfResponse.json();
+              
+              if (perfResponse.ok && perfData.success) {
+                account.performance = perfData.metrics;
+              }
+            } catch (err) {
+              console.error(`Error fetching performance for account ${account.id}:`, err);
+              // Don't fail the entire operation if one performance fetch fails
+            }
+          })
+        );
+        
+        // Set the final accounts with performance data
+        setAccounts(fetchedAccounts);
       } else {
         setError('No accounts found or unexpected response format');
       }
@@ -177,29 +436,71 @@ export default function BusinessAccountsPage() {
       console.error('Error fetching business accounts:', error);
     } finally {
       setLoading(false);
+      setLoadingPerformance(false);
     }
   }
 
-  function handleViewDetails(account: BusinessAccount) {
-    alert(`View details for account: ${account.name}`);
-    // In a real implementation, this would navigate to a details page
-    // e.g., router.push(`/dashboard/business-accounts/${account.id}`);
+  async function fetchLocations(account: BusinessAccount) {
+    setLoadingLocations(true);
+    setLocationError(null);
+    
+    try {
+      const response = await fetch(`/api/google/business-locations?accountId=${account.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch locations');
+      }
+      
+      if (data.success && data.locations) {
+        setLocations(data.locations);
+      } else {
+        setLocationError('No locations found or unexpected response format');
+        setLocations([]);
+      }
+    } catch (error) {
+      setLocationError(error instanceof Error ? error.message : 'Unknown error fetching locations');
+      console.error('Error fetching locations:', error);
+      setLocations([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  }
+
+  function handleViewLocations(account: BusinessAccount) {
+    setSelectedAccount(account);
+    fetchLocations(account);
+  }
+  
+  function handleBackToAccounts() {
+    setSelectedAccount(null);
+    setLocations([]);
+    setLocationError(null);
+  }
+
+  function handleViewLocationDetails(location: BusinessLocation) {
+    // In a real implementation, this could navigate to a detailed view
+    // or open a modal with all location details
+    alert(`Location details: ${location.locationName || location.title || 'Unnamed Location'}`);
+    console.log('Location details:', location);
   }
 
   useEffect(() => {
     fetchBusinessAccounts();
   }, []);
 
-  function getAccountTypeLabel(type: string) {
-    switch (type) {
-      case 'PERSONAL':
-        return 'Personal Account';
-      case 'LOCATION_GROUP':
-        return 'Business Account';
-      case 'USER_GROUP':
-        return 'User Group';
+  function getVerificationStateLabel(state: string) {
+    switch (state) {
+      case 'VERIFIED':
+        return 'Verified';
+      case 'UNVERIFIED':
+        return 'Unverified';
+      case 'VERIFICATION_REQUESTED':
+        return 'Verification Requested';
+      case 'VERIFICATION_PENDING':
+        return 'Verification Pending';
       default:
-        return type;
+        return state || 'Unknown';
     }
   }
 
@@ -207,117 +508,262 @@ export default function BusinessAccountsPage() {
     <div className="container mx-auto py-10">
       <Card>
         <CardHeader>
-          <CardTitle>Google Business Accounts</CardTitle>
-          <CardDescription>
-            View and manage your connected Google Business accounts
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            {selectedAccount ? (
+              <>
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-2"
+                    onClick={handleBackToAccounts}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Back
+                  </Button>
+                  <div>
+                    <CardTitle>{selectedAccount.name}</CardTitle>
+                    <CardDescription>
+                      Viewing locations for this business account
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchLocations(selectedAccount)}
+                  disabled={loadingLocations}
+                >
+                  {loadingLocations ? 'Refreshing...' : 'Refresh Locations'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <CardTitle>Google Business Profile Metrics</CardTitle>
+                  <CardDescription>
+                    View your business accounts with performance metrics
+                  </CardDescription>
+                </div>
+              </>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Your Business Accounts</h3>
-              <Button onClick={fetchBusinessAccounts} disabled={loading}>
-                {loading ? 'Refreshing...' : 'Refresh Accounts'}
-              </Button>
-            </div>
-
-            {error && (
-              <Alert className="bg-red-50 border-red-200 text-red-800">
-                <h4 className="font-medium">Error Loading Accounts</h4>
-                <p className="text-sm mt-1">{error}</p>
-              </Alert>
-            )}
-
-            {loading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
+          {!selectedAccount ? (
+            // Accounts view
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Business Accounts & Performance</h3>
+                <Button onClick={fetchBusinessAccounts} disabled={loading || loadingPerformance}>
+                  {loading || loadingPerformance ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
               </div>
-            ) : (
-              <div>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => {
-                            return (
-                              <TableHead key={header.id}>
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                              </TableHead>
-                            )
-                          })}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
-                            ))}
+
+              {error && (
+                <Alert className="bg-red-50 border-red-200 text-red-800">
+                  <h4 className="font-medium">Error Loading Accounts</h4>
+                  <p className="text-sm mt-1">{error}</p>
+                </Alert>
+              )}
+
+              {loading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                <div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => {
+                              return (
+                                <TableHead key={header.id}>
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
+                                </TableHead>
+                              )
+                            })}
                           </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={columns.length} className="h-24 text-center">
-                            No accounts found.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="flex items-center justify-end space-x-2 py-4">
-                  <div className="flex-1 text-sm text-muted-foreground">
-                    Showing {table.getFilteredRowModel().rows.length} of{" "}
-                    {accounts.length} account(s)
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                          table.getRowModel().rows.map((row) => (
+                            <TableRow
+                              key={row.id}
+                              data-state={row.getIsSelected() && "selected"}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 text-center">
+                              No accounts found.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
-                  <div className="space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => table.previousPage()}
-                      disabled={!table.getCanPreviousPage()}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => table.nextPage()}
-                      disabled={!table.getCanNextPage()}
-                    >
-                      Next
-                    </Button>
+                  <div className="flex items-center justify-end space-x-2 py-4">
+                    <div className="flex-1 text-sm text-muted-foreground">
+                      Showing {table.getFilteredRowModel().rows.length} of{" "}
+                      {accounts.length} account(s)
+                    </div>
+                    <div className="space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              )}
+              
+              <div className="text-sm mt-6">
+                <h4 className="font-medium mb-1">Performance Metrics (Last 30 Days):</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Impressions: Total views of your business profile</li>
+                  <li>Searches: Number of times your business appeared in search results</li>
+                  <li>Website Clicks: Users who clicked through to your website</li>
+                  <li>Phone Calls: Users who clicked to call your business</li>
+                  <li>Direction Requests: Users who requested directions to your location</li>
+                </ul>
               </div>
-            )}
-            
-            <div className="text-sm mt-6">
-              <h4 className="font-medium mb-1">What you can do with business accounts:</h4>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>View and manage business locations</li>
-                <li>Monitor business profile performance</li>
-                <li>Respond to customer reviews</li>
-                <li>Update business information</li>
-              </ul>
             </div>
-          </div>
+          ) : (
+            // Locations view
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">
+                  Locations for {selectedAccount.name}
+                </h3>
+              </div>
+
+              {locationError && (
+                <Alert className="bg-red-50 border-red-200 text-red-800">
+                  <h4 className="font-medium">Error Loading Locations</h4>
+                  <p className="text-sm mt-1">{locationError}</p>
+                </Alert>
+              )}
+
+              {loadingLocations ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                <div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        {locationTable.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => {
+                              return (
+                                <TableHead key={header.id}>
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
+                                </TableHead>
+                              )
+                            })}
+                          </TableRow>
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {locationTable.getRowModel().rows?.length ? (
+                          locationTable.getRowModel().rows.map((row) => (
+                            <TableRow
+                              key={row.id}
+                              data-state={row.getIsSelected() && "selected"}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={locationColumns.length} className="h-24 text-center">
+                              No locations found for this account.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="flex items-center justify-end space-x-2 py-4">
+                    <div className="flex-1 text-sm text-muted-foreground">
+                      Showing {locationTable.getRowModel().rows.length} location(s)
+                    </div>
+                    <div className="space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => locationTable.previousPage()}
+                        disabled={!locationTable.getCanPreviousPage()}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => locationTable.nextPage()}
+                        disabled={!locationTable.getCanNextPage()}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-sm mt-6">
+                <h4 className="font-medium mb-1">Available Location Data:</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Business name and contact information</li>
+                  <li>Physical address and service areas</li>
+                  <li>Business categories and attributes</li>
+                  <li>Operating hours and special hours</li>
+                  <li>Photos and media</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
