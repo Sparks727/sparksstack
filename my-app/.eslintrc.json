@@ -1,16 +1,6 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "react/no-unescaped-entities": "off",
-    "@typescript-eslint/no-explicit-any": ["warn", { "ignoreRestArgs": true }]
-  },
-  "overrides": [
-    {
-      "files": ["src/app/api/**/*.ts"],
-      "rules": {
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/ban-ts-comment": "off"
-      }
-    }
-  ]
+    "react/no-unescaped-entities": "off"
+  }
 } 

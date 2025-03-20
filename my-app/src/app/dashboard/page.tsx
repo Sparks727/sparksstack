@@ -317,7 +317,7 @@ export default function GoogleBusinessProfileTestPage() {
               <p className="text-sm text-gray-500 mb-2">
                 Use this tool to check if your Google account is correctly connected with the required permissions.
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button 
                   onClick={checkGoogleConnection}
                   disabled={loading}
@@ -349,6 +349,26 @@ export default function GoogleBusinessProfileTestPage() {
                   }}
                 >
                   Debug Token Info
+                </Button>
+                
+                <Button
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    window.open('/api/google/people-api-test', '_blank');
+                  }}
+                >
+                  Test People API First
+                </Button>
+                
+                <Button
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    window.open('/api/google/business-profile-test', '_blank');
+                  }}
+                >
+                  Test Business Profile APIs
                 </Button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 /**
@@ -8,8 +8,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get the current user session from Clerk
-    const session = await auth();
-    const userId = session.userId;
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized - No user session found' },
@@ -17,60 +16,50 @@ export async function GET() {
       );
     }
     
-    // Make direct request to Clerk API
-    const response = await fetch(
-      `https://api.clerk.com/v1/users/${userId}/oauth_access_tokens/google`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
+    // Get the user from Clerk
+    const user = await clerkClient.users.getUser(userId);
+    
+    // Find the Google OAuth account if connected
+    const googleAccount = user.externalAccounts.find(
+      (account) => account.provider === 'google'
     );
     
-    if (!response.ok) {
+    if (!googleAccount) {
       return NextResponse.json(
-        { 
-          error: 'Failed to retrieve Google OAuth token', 
-          status: response.status,
-          statusText: response.statusText 
-        },
-        { status: response.status }
+        { error: 'No Google account connected to this user' },
+        { status: 400 }
       );
     }
     
-    const data = await response.json();
+    // Gather debug information
+    const debugInfo = {
+      userId,
+      googleAccountId: googleAccount.id,
+      googleEmail: googleAccount.emailAddress,
+      scopes: googleAccount.approvedScopes,
+      hasBusinessManageScope: googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage'),
+      // We won't expose the actual tokens in the response for security reasons
+      hasToken: !!googleAccount.accessToken,
+      // Add token prefix for debugging (first 10 chars)
+      tokenPrefix: googleAccount.accessToken ? `${googleAccount.accessToken.substring(0, 10)}...` : null,
+      tokenLength: googleAccount.accessToken ? googleAccount.accessToken.length : 0,
+      // Add some info about the token format
+      tokenFormat: googleAccount.accessToken ? {
+        startsWithEyJ: googleAccount.accessToken.startsWith('eyJ'),
+        containsDots: googleAccount.accessToken.includes('.'),
+        dotCount: googleAccount.accessToken.split('.').length - 1,
+        isProbablyJwt: googleAccount.accessToken.startsWith('eyJ') && googleAccount.accessToken.split('.').length === 3,
+        isProbablyRawOAuth: !googleAccount.accessToken.startsWith('eyJ') && !googleAccount.accessToken.includes('.'),
+      } : null,
+      // Try to extract provider specific info
+      providerUserId: googleAccount.providerUserId,
+      publicMetadata: user.publicMetadata,
+    };
     
-    // Don't expose the actual token for security
-    let tokenInfo = null;
-    
-    if (data && data.length > 0 && data[0].token) {
-      const token = data[0].token;
-      tokenInfo = {
-        tokenAvailable: true,
-        tokenPrefix: token.substring(0, 10) + '...',
-        tokenLength: token.length,
-        format: {
-          startsWithEyJ: token.startsWith('eyJ'),
-          containsDots: token.includes('.'),
-          dotCount: token.split('.').length - 1,
-          isProbablyJwt: token.startsWith('eyJ') && token.split('.').length === 3,
-          isProbablyRawOAuth: !token.startsWith('eyJ') && !token.includes('.'),
-        }
-      };
-    } else {
-      tokenInfo = {
-        tokenAvailable: false,
-        message: 'No token found in response',
-        responseData: typeof data === 'object' ? Object.keys(data) : typeof data
-      };
-    }
-    
+    // Return debug info
     return NextResponse.json({
       message: 'Google OAuth debug information',
-      userId,
-      tokenInfo,
-      hasConnectedAccount: data && data.length > 0
+      debugInfo
     });
     
   } catch (error) {
