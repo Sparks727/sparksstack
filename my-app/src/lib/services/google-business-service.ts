@@ -40,6 +40,11 @@ export class GoogleBusinessService {
       console.log('Using token (first 15 chars):', token.substring(0, 15) + '...');
       console.log('Token length:', token.length);
       
+      // Raw OAuth tokens typically don't start with 'eyJ' (JWT format) and don't have dots
+      // They're usually longer strings of random characters
+      const isProbablyRawOAuth = !token.startsWith('eyJ') && !token.includes('.');
+      console.log('Token appears to be a raw OAuth token:', isProbablyRawOAuth);
+      
       // Check for common token format issues
       if (token.startsWith('eyJ') && token.includes('.')) {
         console.warn('⚠️ Token appears to be a JWT, not a raw OAuth token. Google APIs typically expect a raw OAuth token.');

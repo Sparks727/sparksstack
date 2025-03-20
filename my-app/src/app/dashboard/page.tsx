@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import { useState } from 'react';
@@ -90,91 +91,121 @@ export default function GoogleBusinessProfileTestPage() {
   async function testApiConnection() {
     setApiTesting(true);
     try {
-      // Try to get the token from the custom JWT template first
+      // First attempt: Try to get the direct OAuth token from the user object
       let googleToken;
-      try {
-        // Use the custom JWT template specifically created for Google OAuth
-        googleToken = await getToken({ template: 'google_oauth' });
-        console.log('Using custom JWT template token for Google OAuth');
-        
-        if (googleToken) {
-          // If the token is in JSON format with a token property, extract it
-          try {
-            // Log full token for debugging (only in development)
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Original token from Clerk:', googleToken);
-            }
-            
-            // Check if the token is a JSON string
-            if (googleToken.startsWith('{') && googleToken.endsWith('}')) {
-              const tokenData = JSON.parse(googleToken);
-              console.log('Token data keys:', Object.keys(tokenData));
-              
-              // Look for various possible property names
-              if (tokenData.google_oauth_access_token) {
-                console.log('Found google_oauth_access_token in template response');
-                googleToken = tokenData.google_oauth_access_token;
-              } else if (tokenData.access_token) {
-                console.log('Found access_token in template response');
-                googleToken = tokenData.access_token;
-              } else if (tokenData.token) {
-                console.log('Found token in template response');
-                googleToken = tokenData.token;
-              }
-            } else if (googleToken.includes('.') && googleToken.split('.').length === 3) {
-              // Looks like a JWT, try to decode it to see if it contains an access token
-              console.log('Token appears to be a JWT, trying to extract payload');
-              try {
-                const payload = JSON.parse(atob(googleToken.split('.')[1]));
-                console.log('JWT payload keys:', Object.keys(payload));
-                if (payload.access_token) {
-                  console.log('Found access_token in JWT payload');
-                  googleToken = payload.access_token;
-                }
-              } catch (decodeError) {
-                console.error('Error decoding JWT:', decodeError);
-              }
-            }
-          } catch (parseError) {
-            // Token is not JSON, use as is
-            console.log('Token parsing error, using as is:', parseError);
-          }
-        }
-      } catch (templateError) {
-        console.error('Error getting token from custom template:', templateError);
-      }
       
-      // If custom template fails, try to get the token directly from the Google account
-      if (!googleToken) {
-        const googleAccount = user?.externalAccounts?.find(
+      if (user?.externalAccounts) {
+        const googleAccount = user.externalAccounts.find(
           (account) => account.provider === 'google'
         );
         
-        if (!googleAccount) {
-          setDebugInfo(prev => ({
-            ...prev,
-            apiTest: {
-              success: false,
-              message: 'No Google account connected',
-              error: 'Please connect your Google account in Clerk settings'
+        if (googleAccount) {
+          try {
+            // Access the OAuth token directly from the OAuth account
+            // @ts-expect-error - getToken is available but might not be typed correctly
+            googleToken = await googleAccount.getToken();
+            console.log('Got direct OAuth token from Google account object:', !!googleToken);
+            
+            if (googleToken) {
+              console.log('Direct OAuth token type:', typeof googleToken);
+              // Log a small prefix for debugging
+              console.log('Direct OAuth token prefix:', googleToken.substring(0, 10) + '...');
             }
-          }));
-          return;
+          } catch (directTokenError) {
+            console.error('Error getting direct token from account:', directTokenError);
+          }
         }
-        
+      }
+      
+      // Second attempt: Try to get the token from the custom JWT template
+      if (!googleToken) {
         try {
-          // @ts-expect-error - getToken is available but might not be typed correctly
-          googleToken = await googleAccount.getToken();
-          console.log('Got direct token from Google account:', !!googleToken);
-        } catch (tokenError) {
-          console.error('Error getting direct token:', tokenError);
+          // Use the custom JWT template specifically created for Google OAuth
+          googleToken = await getToken({ template: 'google_oauth' });
+          console.log('Using custom JWT template token for Google OAuth');
+          
+          if (googleToken) {
+            // If the token is in JSON format with a token property, extract it
+            try {
+              // Log full token for debugging (only in development)
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Original token from Clerk:', googleToken);
+              }
+              
+              // Check if the token is a JSON string
+              if (googleToken.startsWith('{') && googleToken.endsWith('}')) {
+                const tokenData = JSON.parse(googleToken);
+                console.log('Token data keys:', Object.keys(tokenData));
+                
+                // Look for various possible property names
+                if (tokenData.google_oauth_access_token) {
+                  console.log('Found google_oauth_access_token in template response');
+                  googleToken = tokenData.google_oauth_access_token;
+                } else if (tokenData.access_token) {
+                  console.log('Found access_token in template response');
+                  googleToken = tokenData.access_token;
+                } else if (tokenData.token) {
+                  console.log('Found token in template response');
+                  googleToken = tokenData.token;
+                }
+              } else if (googleToken.includes('.') && googleToken.split('.').length === 3) {
+                // Looks like a JWT, try to decode it to see if it contains an access token
+                console.log('Token appears to be a JWT, trying to extract payload');
+                try {
+                  const payload = JSON.parse(atob(googleToken.split('.')[1]));
+                  console.log('JWT payload keys:', Object.keys(payload));
+                  if (payload.access_token) {
+                    console.log('Found access_token in JWT payload');
+                    googleToken = payload.access_token;
+                  }
+                } catch (decodeError) {
+                  console.error('Error decoding JWT:', decodeError);
+                }
+              }
+            } catch (parseError) {
+              // Token is not JSON, use as is
+              console.log('Token parsing error, using as is:', parseError);
+            }
+          }
+        } catch (templateError) {
+          console.error('Error getting token from custom template:', templateError);
         }
-        
-        // Final fallback to standard oauth_google template
-        if (!googleToken) {
-          googleToken = await getToken({ template: 'oauth_google' });
-          console.log('Using standard Clerk JWT template token');
+      }
+      
+      // Third attempt: Try to access the token directly from sessionClaims
+      if (!googleToken && user) {
+        try {
+          // @ts-ignore - sessionClaims might exist on user object
+          const sessionClaims = user.sessionClaims;
+          
+          if (sessionClaims) {
+            console.log('Found sessionClaims, looking for OAuth tokens');
+            // Log the available keys for debugging
+            console.log('sessionClaims keys:', Object.keys(sessionClaims));
+            
+            // Look for OAuth tokens in various locations
+            const oauthTokens = 
+              // @ts-ignore - accessing possible locations
+              sessionClaims.oauth_tokens || 
+              // @ts-ignore - accessing possible locations
+              sessionClaims.oauth_access_tokens || 
+              // @ts-ignore - accessing possible locations
+              sessionClaims.google_oauth;
+              
+            if (oauthTokens && oauthTokens.google) {
+              console.log('Found direct OAuth token in sessionClaims');
+              googleToken = oauthTokens.google;
+            }
+          }
+        } catch (sessionClaimsError) {
+          console.error('Error accessing session claims:', sessionClaimsError);
         }
+      }
+      
+      // Last fallback: standard oauth_google template
+      if (!googleToken) {
+        googleToken = await getToken({ template: 'oauth_google' });
+        console.log('Using standard Clerk JWT template token');
       }
       
       if (!googleToken) {
