@@ -1,5 +1,16 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/clerk-sdk-node';
 import { NextResponse } from 'next/server';
+
+interface ClerkExternalAccount {
+  id: string;
+  provider: string;
+  emailAddress?: string;
+  approvedScopes: string[] | string;
+  accessToken?: string;
+  providerUserId?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Debug endpoint for troubleshooting Google OAuth tokens
@@ -8,7 +19,8 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get the current user session from Clerk
-    const { userId } = auth();
+    const session = await auth();
+    const userId = session.userId;
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized - No user session found' },
@@ -21,7 +33,7 @@ export async function GET() {
     
     // Find the Google OAuth account if connected
     const googleAccount = user.externalAccounts.find(
-      (account) => account.provider === 'google'
+      (account: ClerkExternalAccount) => account.provider === 'google'
     );
     
     if (!googleAccount) {
@@ -37,7 +49,9 @@ export async function GET() {
       googleAccountId: googleAccount.id,
       googleEmail: googleAccount.emailAddress,
       scopes: googleAccount.approvedScopes,
-      hasBusinessManageScope: googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage'),
+      hasBusinessManageScope: typeof googleAccount.approvedScopes === 'string' 
+        ? googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage')
+        : googleAccount.approvedScopes.includes('https://www.googleapis.com/auth/business.manage'),
       // We won't expose the actual tokens in the response for security reasons
       hasToken: !!googleAccount.accessToken,
       // Add token prefix for debugging (first 10 chars)

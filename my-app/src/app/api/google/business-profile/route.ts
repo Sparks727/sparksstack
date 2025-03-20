@@ -8,7 +8,8 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Ensure the user is authenticated
-    const { userId } = auth();
+    const session = await auth();
+    const userId = session.userId;
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized - No user session found' },
@@ -54,7 +55,7 @@ export async function GET() {
     }
     
     // Get the OAuth token - server-side we might have direct access
-    // @ts-ignore - Property might not be exposed in type definitions
+    // @ts-expect-error - Property might not be exposed in type definitions
     const oauthToken = googleAccount.provider_access_token;
     
     if (!oauthToken) {
