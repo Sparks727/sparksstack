@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { redirect } from 'next/navigation';
+import Sidebar from '@/components/dashboard/Sidebar';
 
 export default function DashboardPageLayout({
   children,
@@ -30,7 +31,10 @@ export default function DashboardPageLayout({
   // Render the dashboard with the protected children
   return (
     <div className="min-h-screen bg-gray-50">
-      {children}
+      <Sidebar />
+      <div className="ml-64 p-8">
+        {children}
+      </div>
     </div>
   );
 } 
