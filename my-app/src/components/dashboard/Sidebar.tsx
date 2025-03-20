@@ -3,34 +3,31 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Building, 
-  Settings, 
-  LogOut, 
-  Activity,
-  Wrench
-} from 'lucide-react';
-import { UserButton } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
+import {
+  CircleHelp,
+  CreditCard,
+  Home,
+  Settings,
+  User,
+  BarChart3,
+  ActivitySquare,
+  FileCode,
+} from 'lucide-react';
 
 interface NavLinkProps {
   href: string;
+  active?: boolean;
   children: React.ReactNode;
 }
 
-function NavLink({ href, children }: NavLinkProps) {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-
+function NavLink({ href, active, children }: NavLinkProps) {
   return (
     <Link
       href={href}
       className={cn(
-        "block px-3 py-2 rounded-md text-sm",
-        isActive 
-          ? "bg-gray-100 text-gray-900 font-medium" 
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        "flex items-center py-2 px-4 rounded-md hover:bg-gray-100 text-sm font-medium",
+        active && "bg-gray-100"
       )}
     >
       {children}
@@ -39,96 +36,78 @@ function NavLink({ href, children }: NavLinkProps) {
 }
 
 const Sidebar = () => {
-  const pathname = usePathname() || '';
-  
+  const pathname = usePathname();
+
   const isActive = (path: string) => {
-    return pathname.startsWith(path);
+    return pathname === path || pathname?.startsWith(`${path}/`);
   };
 
-  const menuItems = [
-    {
-      title: 'Dashboard',
-      path: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      exact: true
-    },
-    {
-      title: 'Business Accounts',
-      path: '/dashboard/business-accounts',
-      icon: <Building className="h-5 w-5" />,
-      exact: false
-    },
-    {
-      title: 'API Test',
-      path: '/dashboard/api-test',
-      icon: <Wrench className="h-5 w-5" />,
-      exact: false
-    },
-    {
-      title: 'Settings',
-      path: '/dashboard/settings',
-      icon: <Settings className="h-5 w-5" />,
-      exact: false
-    }
-  ];
-
   return (
-    <aside className="fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 shadow-sm">
-      <div className="flex flex-col h-full">
-        <div className="p-6 border-b border-gray-200">
-          <Link href="/dashboard" className="flex items-center">
-            <Activity className="h-6 w-6 mr-2 text-orange-500" />
-            <span className="text-xl font-bold">SparksStack</span>
-          </Link>
-        </div>
-        
-        <nav className="flex-1 overflow-y-auto p-4">
-          <ul className="space-y-1">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link 
-                  href={item.path}
-                  className={`flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 ${
-                    (item.exact ? pathname === item.path : isActive(item.path)) 
-                      ? 'bg-orange-50 text-orange-600' 
-                      : ''
-                  }`}
-                >
-                  {item.icon}
-                  <span className="ml-3">{item.title}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <UserButton />
-              <span className="ml-3 text-sm font-medium text-gray-700">Account</span>
-            </div>
-            <Link 
-              href="/sign-out"
-              className="p-2 text-gray-500 rounded-lg hover:bg-gray-100"
-            >
-              <LogOut className="h-5 w-5" />
-            </Link>
-          </div>
+    <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-sm border-r border-gray-200 z-10 overflow-y-auto">
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold">Business Dashboard</h2>
+      </div>
+
+      <div className="p-2 space-y-1">
+        <NavLink href="/dashboard" active={isActive("/dashboard") && pathname === "/dashboard"}>
+          <Home className="h-5 w-5 mr-3" />
+          Overview
+        </NavLink>
+
+        <div className="py-2">
+          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Google Business
+          </h3>
+          
+          <NavLink href="/dashboard/api-direct-test" active={isActive("/dashboard/api-direct-test")}>
+            <ActivitySquare className="h-5 w-5 mr-3" />
+            API Diagnostics
+          </NavLink>
+          
+          <NavLink href="/dashboard/google/metrics" active={isActive("/dashboard/google/metrics")}>
+            <BarChart3 className="h-5 w-5 mr-3" />
+            Profile Metrics
+          </NavLink>
         </div>
 
-        <div className="mt-5">
-          <h2 className="text-sm font-semibold">Google Business</h2>
-          <div className="mt-2 space-y-1">
-            <NavLink href="/dashboard/google">Dashboard</NavLink>
-            <NavLink href="/dashboard/google/business-details">Business Details</NavLink>
-            <NavLink href="/dashboard/google/reviews">Reviews</NavLink>
-            <NavLink href="/dashboard/api-test">API Status</NavLink>
-            <NavLink href="/dashboard/api-direct-test">API Diagnostics</NavLink>
-          </div>
+        <div className="py-2">
+          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Account
+          </h3>
+          
+          <NavLink href="/dashboard/profile" active={isActive("/dashboard/profile")}>
+            <User className="h-5 w-5 mr-3" />
+            Profile
+          </NavLink>
+          
+          <NavLink href="/dashboard/settings" active={isActive("/dashboard/settings")}>
+            <Settings className="h-5 w-5 mr-3" />
+            Settings
+          </NavLink>
+          
+          <NavLink href="/dashboard/billing" active={isActive("/dashboard/billing")}>
+            <CreditCard className="h-5 w-5 mr-3" />
+            Billing
+          </NavLink>
+        </div>
+
+        <div className="py-2">
+          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Help
+          </h3>
+          
+          <NavLink href="/dashboard/help" active={isActive("/dashboard/help")}>
+            <CircleHelp className="h-5 w-5 mr-3" />
+            Documentation
+          </NavLink>
+          
+          <NavLink href="/dashboard/developers" active={isActive("/dashboard/developers")}>
+            <FileCode className="h-5 w-5 mr-3" />
+            API Reference
+          </NavLink>
         </div>
       </div>
-    </aside>
+    </div>
   );
 };
 

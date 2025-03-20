@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 
-export default function DashboardPageLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -30,11 +30,17 @@ export default function DashboardPageLayout({
 
   // Render the dashboard with the protected children
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="ml-64 p-8">
-        {children}
+    <>
+      <div className="relative flex min-h-screen flex-col">
+        <div className="flex-1 items-start md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <Sidebar />
+          <main className="flex w-full flex-col overflow-hidden">
+            <div className="container flex-1 pb-12 pt-4">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 } 

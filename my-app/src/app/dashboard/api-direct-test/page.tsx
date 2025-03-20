@@ -6,100 +6,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CircleCheck, CircleX, CircleAlert, ExternalLink, RefreshCw } from 'lucide-react';
+import { CircleCheck, CircleX, CircleAlert, ExternalLink, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
 
 interface ApiTestResult {
   name: string;
+  url: string;
+  status: number;
   success: boolean;
-  statusCode: number;
-  statusText: string;
-  errorMessage: string | null;
-  errorDetails: unknown;
-  responseBody: unknown;
-  requestDetails: {
-    endpoint: string;
-    method: string;
-    apiService: string;
-  };
-  recommendations: string[];
+  message: string;
+  responseBody?: unknown;
+  errorDetails?: string;
+  executionTime?: number;
 }
 
 interface ApiTestResponse {
-  success: boolean;
-  message: string;
   results: ApiTestResult[];
-  overallRecommendations: string[];
-  tokenInfo: {
-    present: boolean;
-    prefix: string;
-    length: number;
-  };
 }
 
-export default function ApiDirectTestPage() {
+export default function ApiTestPage() {
   const [loading, setLoading] = useState(true);
-  const [testing, setTesting] = useState(false);
+  const [results, setResults] = useState<ApiTestResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<ApiTestResponse | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
-  const runTests = async () => {
-    setTesting(true);
-    setError(null);
-    
+  const toggleExpand = (name: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
+
+  const fetchApiTest = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const response = await fetch('/api/google/api-direct-test');
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
-      const data = await response.json();
-      setTestResults(data);
+      const data: ApiTestResponse = await response.json();
+      setResults(data.results);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
-      setTesting(false);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    runTests();
+    fetchApiTest();
   }, []);
 
-  const getStatusIcon = (result: ApiTestResult) => {
-    if (result.success) {
-      return <CircleCheck className="h-8 w-8 text-green-500" />;
+  const getStatusBadge = (status: number) => {
+    if (status >= 200 && status < 300) {
+      return <Badge className="bg-green-500">Status {status}</Badge>;
+    } else if (status >= 400 && status < 500) {
+      return <Badge variant="destructive">Status {status}</Badge>;
+    } else if (status >= 500) {
+      return <Badge variant="destructive">Status {status}</Badge>;
+    } else {
+      return <Badge variant="secondary">Status {status}</Badge>;
     }
-    if (result.statusCode >= 500) {
-      return <CircleAlert className="h-8 w-8 text-amber-500" />;
-    }
-    return <CircleX className="h-8 w-8 text-red-500" />;
   };
 
-  const getStatusBadge = (statusCode: number) => {
-    if (statusCode >= 200 && statusCode < 300) {
-      return <Badge className="bg-green-500">{statusCode}</Badge>;
-    }
-    if (statusCode >= 400 && statusCode < 500) {
-      return <Badge className="bg-red-500">{statusCode}</Badge>;
-    }
-    if (statusCode >= 500) {
-      return <Badge className="bg-amber-500">{statusCode}</Badge>;
-    }
-    return <Badge>{statusCode}</Badge>;
+  const getStatusIcon = (success: boolean) => {
+    return success 
+      ? <CircleCheck className="h-6 w-6 text-green-500" /> 
+      : <CircleX className="h-6 w-6 text-red-500" />;
   };
 
-  if (loading || testing) {
+  // Function to format JSON for display
+  const formatJSON = (data: unknown): string => {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (e) {
+      return String(data);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Google Business API Direct Test</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
+        </div>
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
             <Card key={i}>
               <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
@@ -107,8 +106,8 @@ export default function ApiDirectTestPage() {
               <CardContent>
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
                 </div>
               </CardContent>
             </Card>
@@ -121,258 +120,172 @@ export default function ApiDirectTestPage() {
   if (error) {
     return (
       <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Google Business API Direct Test</h1>
+        <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
         <Alert variant="destructive">
-          <AlertTitle>Error Running Tests</AlertTitle>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Button onClick={runTests} disabled={testing}>
-          {testing ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+        <Button onClick={fetchApiTest}>
+          <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
         </Button>
       </div>
     );
   }
 
-  if (!testResults) {
-    return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Google Business API Direct Test</h1>
-        <Alert>
-          <AlertTitle>No Results</AlertTitle>
-          <AlertDescription>No test results available. Please run the tests.</AlertDescription>
-        </Alert>
-        <Button onClick={runTests} disabled={testing}>
-          {testing ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Run Tests
-        </Button>
-      </div>
-    );
-  }
-
-  const passedApis = testResults.results.filter(r => r.success);
-  const failedApis = testResults.results.filter(r => !r.success);
-  
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <h1 className="text-2xl font-bold">Google Business API Direct Test</h1>
-        <Button onClick={runTests} className="mt-2 md:mt-0" disabled={testing}>
-          {testing ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Run Tests Again
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-2xl font-bold">Google Business API Diagnostics</h1>
+        <Button onClick={fetchApiTest} className="mt-2 md:mt-0">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Run Diagnostics
         </Button>
       </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="details">API Details</TabsTrigger>
-          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Summary</CardTitle>
-              <CardDescription>
-                {testResults.success
-                  ? 'All APIs are working correctly'
-                  : `${failedApis.length} of ${testResults.results.length} APIs failed testing`}
-              </CardDescription>
-              <div className="mt-2 text-sm text-muted-foreground">
-                <p>We are now focusing on the Legacy Google My Business API for all operations.</p>
-                <p>Other specialized APIs have been disabled in Google Cloud Console.</p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-md">
-                  <p className="text-4xl font-bold text-green-600 dark:text-green-400">{passedApis.length}</p>
-                  <p className="text-sm text-green-600 dark:text-green-400">APIs Working</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-md">
-                  <p className="text-4xl font-bold text-red-600 dark:text-red-400">{failedApis.length}</p>
-                  <p className="text-sm text-red-600 dark:text-red-400">APIs Failing</p>
-                </div>
-              </div>
-              
-              <div className="mt-6 space-y-2">
-                <h3 className="font-medium">Overall Recommendations</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  {testResults.overallRecommendations.map((rec, i) => (
-                    <li key={i} className="text-sm">{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-            <CardFooter className="text-xs text-gray-500">
-              Google OAuth Token: {testResults.tokenInfo.present 
-                ? `Present (${testResults.tokenInfo.prefix}, length: ${testResults.tokenInfo.length})` 
-                : 'Not found'}
-            </CardFooter>
-          </Card>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {testResults.results.map((result) => (
-              <Card key={result.name} className={result.success ? 'border-green-200' : 'border-red-200'}>
-                <CardHeader className="flex flex-row items-center space-x-2 pb-2">
-                  {getStatusIcon(result)}
-                  <div>
-                    <CardTitle className="text-lg">{result.name}</CardTitle>
-                    <CardDescription className="flex items-center space-x-2">
-                      {getStatusBadge(result.statusCode)}
-                      <span>{result.statusText}</span>
+
+      <div className="space-y-4">
+        {results.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No Results</AlertTitle>
+            <AlertDescription>No API test results available.</AlertDescription>
+          </Alert>
+        ) : (
+          results.map((result) => (
+            <Card key={result.name} className={cn(
+              "border-l-4",
+              result.success ? "border-l-green-500" : "border-l-red-500"
+            )}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2">
+                      {getStatusIcon(result.success)}
+                      {result.name}
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      {result.url}
                     </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {!result.success && result.errorMessage && (
-                    <div className="text-sm text-red-500 mb-2">{result.errorMessage}</div>
-                  )}
-                  <div className="text-xs text-gray-500">
-                    {result.requestDetails.method} {result.requestDetails.endpoint}
+                  <div className="flex items-center space-x-2">
+                    {getStatusBadge(result.status)}
+                    {result.executionTime && (
+                      <Badge variant="outline">{result.executionTime.toFixed(3)}s</Badge>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="details" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            {testResults.results.map((result) => (
-              <Accordion type="single" collapsible key={result.name}>
-                <AccordionItem value={result.name}>
-                  <AccordionTrigger className="px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                    <div className="flex items-center space-x-3">
-                      {getStatusIcon(result)}
-                      <div className="text-left">
-                        <p className="font-medium">{result.name}</p>
-                        <div className="flex items-center space-x-2">
-                          {getStatusBadge(result.statusCode)}
-                          <span className="text-sm">{result.statusText}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border border-gray-100 dark:border-gray-700 rounded-b-md">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium mb-1">Request Details</h4>
-                        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm font-mono overflow-x-auto">
-                          <p>Method: {result.requestDetails.method}</p>
-                          <p>Endpoint: {result.requestDetails.endpoint}</p>
-                          <p>API Service: {result.requestDetails.apiService}</p>
-                        </div>
-                      </div>
-                      
-                      {!result.success && result.recommendations.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-1">Recommendations</h4>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {result.recommendations.map((rec, i) => (
-                              <li key={i} className="text-sm">{rec}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {result.responseBody !== null && (
-                        <div>
-                          <h4 className="font-medium mb-1">Response Body</h4>
-                          <ScrollArea className="h-[200px] w-full">
-                            <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-x-auto">
-                              {typeof result.responseBody === 'string' 
-                                ? result.responseBody 
-                                : JSON.stringify(result.responseBody, null, 2)}
-                            </pre>
-                          </ScrollArea>
-                        </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="recommendations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Overall Recommendations</CardTitle>
-              <CardDescription>
-                Based on the test results, here are recommendations to fix issues with your Google Business APIs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="list-disc pl-5 space-y-3">
-                {testResults.overallRecommendations.map((rec, i) => (
-                  <li key={i}>{rec}</li>
-                ))}
-              </ul>
+                </div>
+              </CardHeader>
               
-              {failedApis.length > 0 && (
-                <>
-                  <h3 className="font-medium mt-6 mb-2">API-Specific Recommendations</h3>
-                  <div className="space-y-4">
-                    {failedApis.map((api) => (
-                      <div key={api.name} className="p-4 border rounded-md">
-                        <h4 className="font-medium flex items-center space-x-2">
-                          {getStatusBadge(api.statusCode)}
-                          <span>{api.name}</span>
-                        </h4>
-                        <ul className="list-disc pl-5 mt-2 space-y-1">
-                          {api.recommendations.map((rec, i) => (
-                            <li key={i} className="text-sm">{rec}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    {result.success ? (
+                      <p className="text-green-600 font-medium">{result.message}</p>
+                    ) : (
+                      <p className="text-red-600 font-medium">{result.message}</p>
+                    )}
                   </div>
-                </>
-              )}
-            </CardContent>
-            <CardFooter>
-              <div className="text-sm">
-                <p className="font-medium">Google Cloud Console Resources</p>
-                <ul className="mt-1 space-y-1">
-                  <li className="flex items-center">
-                    <a 
-                      href="https://console.cloud.google.com/apis/dashboard" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline flex items-center"
+
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => toggleExpand(result.name)}
+                      className="w-full justify-between"
                     >
-                      API Dashboard <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </li>
-                  <li className="flex items-center">
-                    <a 
-                      href="https://console.cloud.google.com/apis/library" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline flex items-center"
-                    >
-                      API Library <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </li>
-                  <li className="flex items-center">
-                    <a 
-                      href="https://console.cloud.google.com/apis/quotas" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline flex items-center"
-                    >
-                      API Quotas <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </li>
-                </ul>
+                      <span>Response Details</span>
+                      {expandedItems[result.name] ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                    
+                    {expandedItems[result.name] && (
+                      <div className="mt-4 space-y-4">
+                        {result.errorDetails && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium">Error Details:</h4>
+                            <pre className="bg-slate-100 dark:bg-slate-800 p-4 rounded text-xs overflow-x-auto">
+                              {result.errorDetails}
+                            </pre>
+                          </div>
+                        )}
+                        
+                        {result.responseBody && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium">Response Body:</h4>
+                            <pre className="bg-slate-100 dark:bg-slate-800 p-4 rounded text-xs overflow-x-auto">
+                              {formatJSON(result.responseBody)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+              
+              <CardFooter className="pt-0">
+                <div className="w-full text-xs text-muted-foreground">
+                  {result.success ? (
+                    <p>API is working correctly.</p>
+                  ) : (
+                    <p>See Google Cloud Console to verify API settings.</p>
+                  )}
+                </div>
+              </CardFooter>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <div className="mt-8">
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="troubleshooting">
+            <AccordionTrigger>Troubleshooting Tips</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              <h3 className="text-lg font-medium">Common Issues & Solutions:</h3>
+              
+              <div className="space-y-1">
+                <h4 className="font-medium">404 Not Found Errors</h4>
+                <p className="text-sm text-muted-foreground">
+                  This usually indicates the API endpoint doesn't exist or you don't have access to it.
+                  Verify that your account has a Google Business Profile associated with it.
+                </p>
               </div>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              
+              <div className="space-y-1">
+                <h4 className="font-medium">401 Unauthorized Errors</h4>
+                <p className="text-sm text-muted-foreground">
+                  Check that your OAuth scopes include <code>https://www.googleapis.com/auth/business.manage</code>
+                  and that your OAuth client ID is properly configured.
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <h4 className="font-medium">403 Forbidden Errors</h4>
+                <p className="text-sm text-muted-foreground">
+                  Make sure the API is enabled in Google Cloud Console and that your project has the necessary permissions.
+                </p>
+              </div>
+              
+              <Button variant="outline" size="sm" asChild>
+                <a 
+                  href="https://console.cloud.google.com/apis/library" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <span>Open Google Cloud Console</span>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
     </div>
   );
 } 
