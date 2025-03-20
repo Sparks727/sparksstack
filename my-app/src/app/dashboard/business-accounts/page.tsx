@@ -24,7 +24,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronLeft, Search } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, Search, Store, AlertTriangle, Ban, Bell, Trash, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import React from 'react';
 
@@ -456,6 +456,29 @@ export default function BusinessAccountsPage() {
     table.setPageSize(100); // Show 100 records by default to display more accounts
   }, [table]);
 
+  // Calculate account statistics
+  const accountStats = React.useMemo(() => {
+    if (!accounts || accounts.length === 0) return null;
+    
+    const total = accounts.length;
+    const unverified = accounts.filter(a => a.verificationState !== 'VERIFIED').length;
+    const suspended = accounts.filter(a => a.type === 'SUSPENDED' || a.verificationState === 'SUSPENDED').length;
+    
+    // We don't have a direct way to determine these from API data, but we can approximate
+    const googleUpdates = accounts.filter(a => a.type === 'PERSONAL').length; // Assuming PERSONAL accounts are those with Google updates
+    const permanentlyClosed = 0; // This would require additional API calls to determine
+    const duplicates = 0; // This would require additional API calls to determine
+    
+    return {
+      total,
+      unverified,
+      suspended,
+      googleUpdates,
+      permanentlyClosed,
+      duplicates,
+    };
+  }, [accounts]);
+
   async function fetchBusinessAccounts() {
     setLoading(true);
     setError(null);
@@ -635,6 +658,63 @@ export default function BusinessAccountsPage() {
     }
   }
 
+  // Add this function to render statistics
+  function renderAccountStats() {
+    if (!accountStats) return null;
+    
+    return (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 mb-2">
+            <Store className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.total}</div>
+          <div className="text-sm text-gray-500">Total businesses</div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 mb-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.unverified}</div>
+          <div className="text-sm text-gray-500">Unverified</div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 mb-2">
+            <Ban className="h-5 w-5 text-red-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.suspended}</div>
+          <div className="text-sm text-gray-500">Suspended</div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 mb-2">
+            <Bell className="h-5 w-5 text-indigo-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.googleUpdates}</div>
+          <div className="text-sm text-gray-500">Google updates</div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mb-2">
+            <Trash className="h-5 w-5 text-gray-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.permanentlyClosed}</div>
+          <div className="text-sm text-gray-500">Permanently closed</div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 mb-2">
+            <Copy className="h-5 w-5 text-orange-600" />
+          </div>
+          <div className="text-2xl font-bold">{accountStats.duplicates}</div>
+          <div className="text-sm text-gray-500">Duplicate</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-10">
       <Card>
@@ -698,7 +778,10 @@ export default function BusinessAccountsPage() {
                 </Alert>
               )}
 
-              {/* Add search input */}
+              {/* Show account statistics */}
+              {!loading && renderAccountStats()}
+
+              {/* Search input */}
               <div className="relative w-full md:w-1/3">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input

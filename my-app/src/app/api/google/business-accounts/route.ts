@@ -7,6 +7,8 @@ interface BusinessAccount {
   accountNumber?: string;
   type: string;
   role?: string;
+  verificationState?: string;
+  storeCode?: string;
 }
 
 /**
@@ -71,6 +73,8 @@ export async function GET(request: Request) {
       accountsUrl += `&pageToken=${pageToken}`;
     }
     
+    console.log("Fetching accounts from:", accountsUrl);
+    
     const accountsResponse = await fetch(accountsUrl, {
       headers: {
         'Authorization': `Bearer ${oauthToken}`,
@@ -91,21 +95,81 @@ export async function GET(request: Request) {
     
     const accountsData = await accountsResponse.json();
     
-    // Format the response to include only essential account information
-    const formattedAccounts = accountsData.accounts.map((account: BusinessAccount) => ({
+    // Get basic account information first
+    const accounts = accountsData.accounts.map((account: BusinessAccount) => ({
       id: account.name.split('/').pop(),
       name: account.accountName,
       accountNumber: account.accountNumber || null,
       type: account.type,
       role: account.role || 'OWNER',
-      fullResource: account.name
+      fullResource: account.name,
+      verificationState: 'UNKNOWN' // Will be updated if possible
     }));
+    
+    // Fetch additional account verification data from the Verifications API if available
+    try {
+      // For each account, try to get first location to check verification state
+      await Promise.all(accounts.map(async (account: {
+        id: string;
+        name: string;
+        accountNumber: string | null;
+        type: string;
+        role: string;
+        fullResource: string;
+        verificationState: string;
+        isVerified?: boolean;
+        storeCode?: string;
+      }) => {
+        try {
+          const locationsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.fullResource}/locations?pageSize=1`;
+          
+          const locationsResponse = await fetch(locationsUrl, {
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (locationsResponse.ok) {
+            const locationsData = await locationsResponse.json();
+            
+            if (locationsData.locations && locationsData.locations.length > 0) {
+              const location = locationsData.locations[0];
+              
+              // Check for verification state in the location data
+              if (location.metadata && location.metadata.verificationState) {
+                account.verificationState = location.metadata.verificationState;
+              } else if (location.verificationState) {
+                account.verificationState = location.verificationState;
+              }
+              
+              // Check if the location is permanently closed
+              if (location.metadata && location.metadata.hasOwnProperty('isVerified')) {
+                account.isVerified = location.metadata.isVerified;
+              }
+              
+              // Check if the location has a store code (useful for franchises)
+              if (location.storeCode) {
+                account.storeCode = location.storeCode;
+              }
+            }
+          }
+        } catch (locationError) {
+          console.log(`Error fetching location for account ${account.id}:`, locationError);
+          // Continue with next account
+        }
+      }));
+    } catch (verificationError) {
+      console.log("Error fetching verification data:", verificationError);
+      // Continue with the accounts we have
+    }
     
     return NextResponse.json({
       success: true,
       message: 'Successfully retrieved business accounts',
-      totalAccounts: formattedAccounts.length,
-      accounts: formattedAccounts,
+      totalAccounts: accounts.length,
+      accounts: accounts,
       nextPageToken: accountsData.nextPageToken || null,
       pageSize: parseInt(pageSize)
     });
