@@ -19,21 +19,24 @@ interface ApiTest {
   apiService: string;
   method: string;
   body?: ApiMetricsBody | Record<string, unknown>;
+  requiresAccountId?: boolean;
 }
 
 // List of APIs to test with their endpoints
 const API_TESTS: ApiTest[] = [
   {
     name: 'Account Management API',
-    endpoint: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=1',
+    endpoint: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=10',
     apiService: 'mybusinessaccountmanagement.googleapis.com',
     method: 'GET',
   },
   {
     name: 'Legacy My Business API',
-    endpoint: 'https://mybusiness.googleapis.com/v4/accounts?pageSize=1',
+    // This endpoint is a placeholder and will be replaced with the actual account ID
+    endpoint: 'https://mybusiness.googleapis.com/v4/accounts/{accountId}',
     apiService: 'mybusiness.googleapis.com',
     method: 'GET',
+    requiresAccountId: true,
   },
   /* Disabled APIs - kept for reference
   {
@@ -85,6 +88,19 @@ interface ApiTestResult {
     apiService: string;
   };
   recommendations: string[];
+}
+
+interface AccountsResponse {
+  accounts?: Array<{
+    name: string;
+    accountName?: string;
+    type?: string;
+    role?: string;
+    state?: {
+      status?: string;
+    };
+  }>;
+  nextPageToken?: string;
 }
 
 /**
@@ -139,6 +155,7 @@ export async function GET() {
     
     // Test each API individually
     const results: ApiTestResult[] = [];
+    let accountId = '';
     
     for (const test of API_TESTS) {
       const result: ApiTestResult = {
@@ -158,7 +175,56 @@ export async function GET() {
       };
       
       try {
-        console.log(`Testing ${test.name} at ${test.endpoint}`);
+        // If this test requires an accountId and we're testing the Legacy API, check if we have one
+        let endpoint = test.endpoint;
+        
+        if (test.name === 'Account Management API') {
+          console.log(`Testing ${test.name} at ${endpoint}`);
+        } else if (test.requiresAccountId) {
+          // We need an account ID from previous Account Management API test
+          if (!accountId) {
+            // Find the Account Management API result
+            const accountApiResult = results.find(r => r.name === 'Account Management API');
+            
+            if (!accountApiResult || !accountApiResult.success) {
+              // Account API failed or hasn't been tested yet
+              result.success = false;
+              result.errorMessage = 'Cannot test this API because Account Management API must succeed first to get account ID';
+              result.recommendations.push('Ensure the Account Management API is working correctly');
+              results.push(result);
+              continue;
+            }
+            
+            // Try to extract account ID from the Account Management API response
+            try {
+              const accountsResponse = accountApiResult.responseBody as AccountsResponse;
+              
+              if (accountsResponse.accounts && accountsResponse.accounts.length > 0) {
+                // Get the first account ID from the name field (format: "accounts/123456789")
+                const accountName = accountsResponse.accounts[0].name;
+                accountId = accountName.split('/')[1];
+                console.log(`Found account ID: ${accountId}`);
+              } else {
+                result.success = false;
+                result.errorMessage = 'No accounts found in the Account Management API response';
+                result.recommendations.push('Verify that your Google account has associated business accounts');
+                results.push(result);
+                continue;
+              }
+            } catch (extractError) {
+              result.success = false;
+              result.errorMessage = 'Failed to extract account ID from Account Management API response';
+              result.errorDetails = extractError;
+              result.recommendations.push('The Account Management API response format may have changed');
+              results.push(result);
+              continue;
+            }
+          }
+          
+          // Replace the {accountId} placeholder with the actual account ID
+          endpoint = endpoint.replace('{accountId}', accountId);
+          console.log(`Testing ${test.name} at ${endpoint}`);
+        }
         
         const fetchOptions: RequestInit = {
           method: test.method,
@@ -174,10 +240,11 @@ export async function GET() {
           fetchOptions.body = JSON.stringify(test.body);
         }
         
-        const apiResponse = await fetch(test.endpoint, fetchOptions);
+        const apiResponse = await fetch(endpoint, fetchOptions);
         
         result.statusCode = apiResponse.status;
         result.statusText = apiResponse.statusText;
+        result.requestDetails.endpoint = endpoint; // Update with actual endpoint used
         
         // Get response body for both success and error cases
         const responseBody = await apiResponse.text();
@@ -210,7 +277,13 @@ export async function GET() {
               result.recommendations.push('You may need to complete the Google My Business API verification process in Google Cloud Console');
             }
           } else if (apiResponse.status === 404) {
-            result.recommendations.push('Resource not found. The endpoint might have changed or the resource doesn\'t exist');
+            if (test.requiresAccountId) {
+              result.recommendations.push('The account ID may be invalid or the account does not exist');
+              result.recommendations.push('Verify that your Google account has associated business accounts');
+              result.recommendations.push('Try using a different endpoint format or check the Google My Business API documentation');
+            } else {
+              result.recommendations.push('Resource not found. The endpoint might have changed or the resource doesn\'t exist');
+            }
           } else if (apiResponse.status === 429) {
             result.recommendations.push('API quota exceeded. Check and increase your quota limits in Google Cloud Console');
           } else if (apiResponse.status >= 500) {
@@ -236,9 +309,17 @@ export async function GET() {
     if (failedApis.length > 0) {
       if (failedApis.some(api => api.name === 'Legacy My Business API')) {
         overallRecommendations.push('We are now focusing solely on the Google My Business API (Legacy) for all business profile operations');
-        overallRecommendations.push('You need to request a quota increase for the Legacy My Business API in Google Cloud Console');
-        overallRecommendations.push('Navigate to: Google Cloud Console > APIs & Services > Quotas & System Limits');
-        overallRecommendations.push('Filter for "Google My Business API" and request increases for both read and write operations');
+        
+        // Special recommendation for Legacy API 404 errors
+        const legacyApi = results.find(r => r.name === 'Legacy My Business API');
+        if (legacyApi && legacyApi.statusCode === 404) {
+          overallRecommendations.push('The Legacy API requires a valid account ID in the URL path');
+          overallRecommendations.push('Make sure your Google account has associated business accounts');
+        } else {
+          overallRecommendations.push('You need to request a quota increase for the Legacy My Business API in Google Cloud Console');
+          overallRecommendations.push('Navigate to: Google Cloud Console > APIs & Services > Quotas & System Limits');
+          overallRecommendations.push('Filter for "Google My Business API" and request increases for both read and write operations');
+        }
       }
       
       // Check for common patterns in error codes
