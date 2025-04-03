@@ -17,7 +17,7 @@ export default function DashboardPage() {
         className="mb-6"
       />
       
-      <h1 className="text-3xl font-bold mb-4">Welcome to OmniLocal</h1>
+      <h1 className="text-3xl font-bold mb-4">Welcome to Sparks Stack</h1>
       
       {user && (
         <p className="text-xl mb-8">
@@ -36,11 +36,11 @@ export default function DashboardPage() {
       
       <div className="w-full max-w-md p-6 border rounded-lg shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-3">Stay Updated</h2>
-        <p className="mb-4">We&apos;ll notify you as soon as OmniLocal is ready to launch.</p>
+        <p className="mb-4">We&apos;ll notify you as soon as Sparks Stack is ready to launch.</p>
         <p className="text-sm text-gray-500">
           In the meantime, if you have any questions, please reach out to us at{" "}
-          <a href="mailto:travis@omnilocal.com" className="text-blue-600 hover:underline">
-            travis@omnilocal.com
+          <a href="mailto:sparksstack@gmail.com" className="text-blue-600 hover:underline">
+            sparksstack@gmail.com
           </a>
         </p>
       </div>
