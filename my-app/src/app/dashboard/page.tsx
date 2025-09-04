@@ -1,15 +1,13 @@
 "use client";
 
 import { useUser } from '@clerk/nextjs';
-import { SignOutButton } from '@clerk/nextjs';
-import { useState, useEffect } from 'react';
-import Image from "next/image";
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ShieldIcon, MailIcon, KeyIcon, CameraIcon, EditIcon, BuildingIcon, UsersIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ShieldIcon, MailIcon, KeyIcon, CameraIcon, EditIcon, BuildingIcon, UsersIcon, PlusIcon, TrashIcon, UserIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { validateInputLength, sanitizeInput } from "@/lib/validation";
 
@@ -37,32 +35,88 @@ export default function DashboardPage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    console.log('Starting photo upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      userId: user.id,
+      userEmail: user.primaryEmailAddress?.emailAddress
+    });
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPEG, PNG, GIF, etc.)",
+        variant: "destructive",
+      });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      toast({
+        title: "File too large",
+        description: "Image size must be less than 5MB",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsUploading(true);
     
     try {
+      // Clear the file input
+      event.target.value = '';
+      
+      console.log('Uploading to Clerk...');
+      
       // Upload to Clerk's user profile using the correct method
       await user.setProfileImage({ file });
       
-      // Show success message
-      alert('Profile picture updated successfully!');
+      console.log('Upload successful!');
       
-      // Refresh the page to show the new image
-      window.location.reload();
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully!",
+      });
+      
+      // Force a re-render by updating the user object
+      // This is more efficient than reloading the entire page
+      console.log('Reloading user data...');
+      await user.reload();
+      console.log('User data reloaded successfully');
+      
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      alert('Failed to upload image. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to upload image. Please try again.";
+      
+      if (error instanceof Error) {
+        console.log('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+        
+        if (error.message.includes('unauthorized') || error.message.includes('permission')) {
+          errorMessage = "You don't have permission to update your profile image.";
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message.includes('size') || error.message.includes('large')) {
+          errorMessage = "Image file is too large. Please use a smaller image.";
+        } else if (error.message.includes('format') || error.message.includes('type')) {
+          errorMessage = "Invalid image format. Please use JPEG, PNG, or GIF.";
+        }
+      }
+      
+      toast({
+        title: "Upload Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }
@@ -134,28 +188,31 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Image
-                src="/SparksStackLogo.png"
-                alt="SparksStack Logo"
-                width={180}
-                height={60}
-                priority
-                className="h-8 w-auto"
-              />
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome back, {user?.username || user?.firstName || "User"}
+              </p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
-                Welcome, {user?.username || user?.firstName || "User"}
-              </span>
-              <SignOutButton>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <KeyIcon className="h-4 w-4" />
-                  Sign Out
-                </Button>
-              </SignOutButton>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                  {user?.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.fullName || 'User'} 
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <UserIcon className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <span className="text-sm font-medium">
+                  {user?.fullName || user?.username || "User"}
+                </span>
+              </div>
             </div>
           </div>
         </div>

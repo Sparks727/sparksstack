@@ -1,114 +1,250 @@
-'use client';
+"use client";
 
-import React from 'react';
+import { useUser, useOrganization } from '@clerk/nextjs';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  BuildingIcon, 
+  UserIcon, 
+  SettingsIcon, 
+  HomeIcon, 
+  ShieldIcon,
+  UsersIcon,
+  FileTextIcon,
+  BarChart3Icon,
+  KeyIcon,
+  LogOutIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import {
-  CircleHelp,
-  CreditCard,
-  Home,
-  Settings,
-  User,
-  BarChart3,
-  ActivitySquare,
-  FileCode,
-} from 'lucide-react';
+import { useState } from 'react';
+import { SignOutButton } from '@clerk/nextjs';
 
-interface NavLinkProps {
+interface SidebarProps {
+  className?: string;
+}
+
+interface NavItem {
+  title: string;
   href: string;
-  active?: boolean;
-  children: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  children?: Omit<NavItem, 'children'>[];
 }
 
-function NavLink({ href, active, children }: NavLinkProps) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center py-2 px-4 rounded-md hover:bg-gray-100 text-sm font-medium",
-        active && "bg-gray-100"
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
-
-const Sidebar = () => {
+export function Sidebar({ className }: SidebarProps) {
+  const { user } = useUser();
+  const { organization } = useOrganization();
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isActive = (path: string) => {
-    return pathname === path || pathname?.startsWith(`${path}/`);
+  const navigation: NavItem[] = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: HomeIcon,
+    },
+    {
+      title: 'Organizations',
+      href: '/dashboard/organizations',
+      icon: BuildingIcon,
+      children: [
+        {
+          title: 'Overview',
+          href: '/dashboard/organizations',
+          icon: BuildingIcon,
+        },
+        {
+          title: 'Create New',
+          href: '/dashboard/organizations/create',
+          icon: BuildingIcon,
+        },
+        {
+          title: 'Manage',
+          href: '/dashboard/organizations/manage',
+          icon: SettingsIcon,
+        },
+        {
+          title: 'Invite Members',
+          href: '/dashboard/organizations/invite',
+          icon: UsersIcon,
+        },
+      ],
+    },
+    {
+      title: 'Profile',
+      href: '/dashboard/profile',
+      icon: UserIcon,
+    },
+    {
+      title: 'Settings',
+      href: '/dashboard/settings',
+      icon: SettingsIcon,
+    },
+    {
+      title: 'Security',
+      href: '/dashboard/security',
+      icon: ShieldIcon,
+    },
+    {
+      title: 'Analytics',
+      href: '/dashboard/analytics',
+      icon: BarChart3Icon,
+    },
+    {
+      title: 'Documents',
+      href: '/dashboard/documents',
+      icon: FileTextIcon,
+    },
+    {
+      title: 'API Keys',
+      href: '/dashboard/api-keys',
+      icon: KeyIcon,
+    },
+  ];
+
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
+  };
+
+  const renderNavItem = (item: NavItem, level: number = 0) => {
+    const isItemActive = isActive(item.href);
+    const hasChildren = item.children && item.children.length > 0;
+    
+    return (
+      <div key={item.href} className="space-y-1">
+        <Link href={item.href}>
+          <Button
+            variant={isItemActive ? "secondary" : "ghost"}
+            className={cn(
+              "w-full justify-start",
+              level > 0 && "ml-4",
+              isCollapsed && "justify-center px-2"
+            )}
+          >
+            <item.icon className={cn("h-4 w-4", level > 0 && "h-3 w-3")} />
+            {!isCollapsed && (
+              <span className={cn("ml-2", level > 0 && "text-sm")}>
+                {item.title}
+              </span>
+            )}
+            {item.badge && !isCollapsed && (
+              <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                {item.badge}
+              </span>
+            )}
+          </Button>
+        </Link>
+        
+        {hasChildren && !isCollapsed && (
+          <div className="space-y-1">
+            {item.children!.map((child) => renderNavItem(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-sm border-r border-gray-200 z-10 overflow-y-auto">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold">Business Dashboard</h2>
-      </div>
-
-      <div className="p-2 space-y-1">
-        <NavLink href="/dashboard" active={isActive("/dashboard") && pathname === "/dashboard"}>
-          <Home className="h-5 w-5 mr-3" />
-          Overview
-        </NavLink>
-
-        <div className="py-2">
-          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Google Business
-          </h3>
-          
-          <NavLink href="/dashboard/api-direct-test" active={isActive("/dashboard/api-direct-test")}>
-            <ActivitySquare className="h-5 w-5 mr-3" />
-            API Diagnostics
-          </NavLink>
-          
-          <NavLink href="/dashboard/google/metrics" active={isActive("/dashboard/google/metrics")}>
-            <BarChart3 className="h-5 w-5 mr-3" />
-            Profile Metrics
-          </NavLink>
+    <div className={cn("flex h-screen", className)}>
+      <div className={cn(
+        "flex flex-col border-r bg-background transition-all duration-300",
+        isCollapsed ? "w-16" : "w-64"
+      )}>
+        {/* Header */}
+        <div className="flex h-16 items-center justify-between border-b px-4">
+          {!isCollapsed && (
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">S</span>
+              </div>
+              <span className="font-semibold">SparksStack</span>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="h-8 w-8 p-0"
+          >
+            {isCollapsed ? (
+              <ChevronRightIcon className="h-4 w-4" />
+            ) : (
+              <ChevronLeftIcon className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
-        <div className="py-2">
-          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Account
-          </h3>
-          
-          <NavLink href="/dashboard/profile" active={isActive("/dashboard/profile")}>
-            <User className="h-5 w-5 mr-3" />
-            Profile
-          </NavLink>
-          
-          <NavLink href="/dashboard/settings" active={isActive("/dashboard/settings")}>
-            <Settings className="h-5 w-5 mr-3" />
-            Settings
-          </NavLink>
-          
-          <NavLink href="/dashboard/billing" active={isActive("/dashboard/billing")}>
-            <CreditCard className="h-5 w-5 mr-3" />
-            Billing
-          </NavLink>
-        </div>
+        {/* Navigation */}
+        <ScrollArea className="flex-1 px-3 py-4">
+          <nav className="space-y-2">
+            {navigation.map((item) => renderNavItem(item))}
+          </nav>
+        </ScrollArea>
 
-        <div className="py-2">
-          <h3 className="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Help
-          </h3>
-          
-          <NavLink href="/dashboard/help" active={isActive("/dashboard/help")}>
-            <CircleHelp className="h-5 w-5 mr-3" />
-            Documentation
-          </NavLink>
-          
-          <NavLink href="/dashboard/developers" active={isActive("/dashboard/developers")}>
-            <FileCode className="h-5 w-5 mr-3" />
-            API Reference
-          </NavLink>
+        {/* Footer */}
+        <div className="border-t p-4 space-y-2">
+          {/* Current Organization */}
+          {organization && !isCollapsed && (
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="flex items-center space-x-2">
+                <BuildingIcon className="h-4 w-4 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{organization.name}</p>
+                  <p className="text-xs text-muted-foreground">Active Organization</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* User Profile */}
+          <div className="flex items-center space-x-2 p-2">
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              {user?.imageUrl ? (
+                <img 
+                  src={user.imageUrl} 
+                  alt={user.fullName || 'User'} 
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <UserIcon className="h-4 w-4 text-primary" />
+              )}
+            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.fullName || user?.username || 'User'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.primaryEmailAddress?.emailAddress}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Sign Out */}
+          <SignOutButton>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50",
+                isCollapsed && "justify-center px-2"
+              )}
+            >
+              <LogOutIcon className="h-4 w-4" />
+              {!isCollapsed && <span className="ml-2">Sign Out</span>}
+            </Button>
+          </SignOutButton>
         </div>
       </div>
     </div>
   );
-};
-
-export default Sidebar; 
+} 

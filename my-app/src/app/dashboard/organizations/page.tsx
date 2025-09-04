@@ -9,7 +9,8 @@ import {
   PlusIcon, 
   SettingsIcon, 
   CrownIcon,
-  ShieldIcon
+  ShieldIcon,
+  CameraIcon
 } from 'lucide-react';
 
 export default function OrganizationsDashboard() {
@@ -60,15 +61,31 @@ export default function OrganizationsDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold">{organization.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Slug: {organization.slug}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Created: {new Date(organization.createdAt).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center gap-4">
+                  {/* Organization Avatar */}
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <BuildingIcon className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-muted border-2 border-background rounded-full p-1">
+                      <CameraIcon className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl font-semibold">{organization.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Slug: {organization.slug}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Created: {new Date(organization.createdAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 Organization photos can be managed in the organization settings
+                    </p>
+                  </div>
                 </div>
+                
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="flex items-center gap-1">
                     <ShieldIcon className="h-3 w-3" />
