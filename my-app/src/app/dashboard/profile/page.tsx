@@ -189,12 +189,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Profile</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Edit your profile information below. Changes are automatically saved.
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
         {/* Profile Overview */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <UserIcon className="h-5 w-5" />
               Profile Information
             </CardTitle>
@@ -212,8 +212,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Avatar Section */}
-            <div className="flex items-center space-x-6">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+              <div className="relative flex justify-center sm:justify-start">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user?.imageUrl} alt={user?.fullName || 'User'} />
                   <AvatarFallback className="text-2xl">
@@ -232,18 +232,18 @@ export default function ProfilePage() {
                 </label>
               </div>
               
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">{user?.fullName || user?.username || 'User'}</h3>
-                {user?.username && (
-                  <p className="text-sm text-muted-foreground">@{user.username}</p>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg font-semibold">{formData.firstName && formData.lastName ? `${formData.firstName} ${formData.lastName}` : formData.username || user?.fullName || 'User'}</h3>
+                {formData.username && (
+                  <p className="text-sm text-muted-foreground">@{formData.username}</p>
                 )}
                 <p className="text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="flex items-center gap-1">
+                <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mt-2">
+                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
                     <ShieldIcon className="h-3 w-3" />
                     {user?.primaryEmailAddress?.verification?.status === 'verified' ? 'Verified' : 'Unverified'}
                   </Badge>
-                  <Badge variant="outline" className="flex items-center gap-1">
+                  <Badge variant="outline" className="flex items-center gap-1 text-xs">
                     <CalendarIcon className="h-3 w-3" />
                     Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </Badge>
@@ -252,7 +252,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Auto-save Status */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center sm:justify-start">
               {isSaving ? (
                 <>
                   <LoaderIcon className="h-4 w-4 animate-spin" />
@@ -263,14 +263,12 @@ export default function ProfilePage() {
                   <CheckIcon className="h-4 w-4 text-green-600" />
                   <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
                 </>
-              ) : (
-                <span>Start typing to see auto-save in action</span>
-              )}
+              ) : null}
             </div>
 
             {/* Form Section - Always Editable */}
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">First Name</label>
                   <Input

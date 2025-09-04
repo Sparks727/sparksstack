@@ -34,20 +34,20 @@ export default function OrganizationsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Organizations</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Manage your organizations and team members
             </p>
           </div>
           {!organization && (
             <Button 
               onClick={() => window.location.href = '/dashboard/organizations/create'}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <PlusIcon className="h-4 w-4" />
               Create Organization
@@ -55,48 +55,52 @@ export default function OrganizationsDashboard() {
           )}
         </div>
 
-        {/* Current Organization */}
-        {organization && (
-          <Card className="border-2 border-primary/20">
+        {/* All Organizations */}
+        {userMemberships && userMemberships.data && userMemberships.data.length > 0 && (
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CrownIcon className="h-5 w-5 text-primary" />
-                Current Organization
-              </CardTitle>
+              <CardTitle className="text-lg sm:text-xl">All Organizations</CardTitle>
+              <CardDescription>
+                Switch between your organizations
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {/* Organization Avatar */}
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <BuildingIcon className="h-8 w-8 text-primary" />
+            <CardContent>
+              <div className="space-y-3">
+                {userMemberships.data.map((membership) => (
+                  <div
+                    key={membership.organization.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <BuildingIcon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{membership.organization.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {membership.role}
+                        </p>
+                      </div>
                     </div>
-                    <div className="absolute -bottom-1 -right-1 bg-muted border-2 border-background rounded-full p-1">
-                      <CameraIcon className="h-3 w-3 text-muted-foreground" />
+                    
+                    <div className="flex items-center gap-2">
+                      {membership.organization.id === organization?.id && (
+                        <Badge variant="default" className="text-xs">
+                          Active
+                        </Badge>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSwitchOrganization(membership.organization.id)}
+                        disabled={membership.organization.id === organization?.id}
+                        className="text-xs h-8 px-3"
+                      >
+                        {membership.organization.id === organization?.id ? 'Current' : 'Switch'}
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div>
-                    <h3 className="text-xl font-semibold">{organization.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Slug: {organization.slug}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Created: {new Date(organization.createdAt).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      💡 Organization photos can be managed in the organization settings
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <ShieldIcon className="h-3 w-3" />
-                    Active
-                  </Badge>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -106,37 +110,28 @@ export default function OrganizationsDashboard() {
         {organization && (
           <Card>
             <CardHeader>
-              <CardTitle>Organization Management</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Organization Management</CardTitle>
               <CardDescription>
-                Use the panel below to manage your organization settings, members, and security policies.
-                All changes are automatically saved and secured by Clerk.
+                Manage your organization settings, members, and access control
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-center">
-                <OrganizationProfile 
-                  appearance={{
-                    elements: {
-                      formButtonPrimary: 'bg-primary hover:bg-primary/90 text-primary-foreground',
-                      card: 'shadow-none',
-                      headerTitle: 'text-2xl font-bold',
-                      headerSubtitle: 'text-muted-foreground',
-                      pageScrollBox: 'max-h-[800px]',
-                    }
-                  }}
-                  path="/dashboard/organizations"
-                  routing="path"
-                />
-              </div>
+              <OrganizationProfile 
+                appearance={{
+                  elements: {
+                    rootBox: "w-full",
+                    card: "shadow-none border-0",
+                    pageScrollBox: "p-0",
+                    navbar: "hidden",
+                    pageContent: "p-0"
+                  }
+                }}
+                path="/dashboard/organizations"
+                routing="path"
+              />
             </CardContent>
           </Card>
         )}
-
-
-
-
-
-
       </div>
     </div>
   );

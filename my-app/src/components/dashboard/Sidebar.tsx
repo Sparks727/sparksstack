@@ -64,7 +64,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <div className={cn("flex h-screen", className)}>
       <div className={cn(
-        "flex flex-col border-r bg-background transition-all duration-300",
+        "flex flex-col border-r bg-background transition-all duration-300 shadow-lg lg:shadow-none",
         isCollapsed ? "w-16" : "w-64"
       )}>
         {/* Header */}
@@ -81,7 +81,7 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 lg:flex hidden"
           >
             {isCollapsed ? (
               <ChevronRightIcon className="h-4 w-4" />
@@ -98,81 +98,65 @@ export function Sidebar({ className }: SidebarProps) {
               const isItemActive = isActive(item.href);
               return (
                 <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={isItemActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start",
-                      isCollapsed && "justify-center px-2"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
+                  <div className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                    isItemActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                    "min-h-[44px] lg:min-h-[40px]" // Better touch targets on mobile
+                  )}>
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
                     {!isCollapsed && (
-                      <span className="ml-2">
-                        {item.title}
-                      </span>
+                      <span className="truncate">{item.title}</span>
                     )}
-                  </Button>
+                  </div>
                 </Link>
               );
             })}
           </nav>
         </ScrollArea>
 
-        {/* Footer */}
-        <div className="border-t p-4 space-y-2">
-          {/* Current Organization */}
-          {organization && !isCollapsed && (
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex items-center space-x-2">
-                <BuildingIcon className="h-4 w-4 text-primary" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{organization.name}</p>
-                  <p className="text-xs text-muted-foreground">Active Organization</p>
-                </div>
+        {/* User Section */}
+        {user && (
+          <div className="border-t p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                {user.imageUrl ? (
+                  <img 
+                    src={user.imageUrl} 
+                    alt={user.fullName || 'User'} 
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="h-4 w-4 text-primary" />
+                )}
               </div>
-            </div>
-          )}
-
-          {/* User Profile */}
-          <div className="flex items-center space-x-2 p-2">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              {user?.imageUrl ? (
-                <img 
-                  src={user.imageUrl} 
-                  alt={user.fullName || 'User'} 
-                  className="w-8 h-8 rounded-full"
-                />
-              ) : (
-                <UserIcon className="h-4 w-4 text-primary" />
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {user.fullName || user.username || 'User'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.primaryEmailAddress?.emailAddress}
+                  </p>
+                </div>
               )}
             </div>
+            
             {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user?.fullName || user?.username || 'User'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.primaryEmailAddress?.emailAddress}
-                </p>
+              <div className="mt-3">
+                <SignOutButton>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start gap-2 text-xs"
+                  >
+                    <LogOutIcon className="h-3 w-3" />
+                    Sign Out
+                  </Button>
+                </SignOutButton>
               </div>
             )}
           </div>
-
-          {/* Sign Out */}
-          <SignOutButton>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50",
-                isCollapsed && "justify-center px-2"
-              )}
-            >
-              <LogOutIcon className="h-4 w-4" />
-              {!isCollapsed && <span className="ml-2">Sign Out</span>}
-            </Button>
-          </SignOutButton>
-        </div>
+        )}
       </div>
     </div>
   );
