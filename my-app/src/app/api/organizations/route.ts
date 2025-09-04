@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
+import { ClerkOrganizationClient } from '@/lib/clerk-client';
 
 // Input validation schemas
 const CreateOrganizationSchema = z.object({
   name: z.string().min(2).max(100).regex(/^[a-zA-Z0-9\s\-_]+$/, 'Invalid organization name format'),
-});
-
-const AddMemberSchema = z.object({
-  organizationId: z.string().min(1),
-  email: z.string().email('Invalid email format'),
-  role: z.enum(['admin', 'member']).default('member'),
 });
 
 const UpdateOrganizationSchema = z.object({
@@ -18,12 +13,9 @@ const UpdateOrganizationSchema = z.object({
   name: z.string().min(2).max(100).regex(/^[a-zA-Z0-9\s\-_]+$/, 'Invalid organization name format'),
 });
 
-// In-memory storage (replace with database in production)
-let organizations: any[] = [];
-
 /**
  * GET /api/organizations
- * Get all organizations for the authenticated user
+ * Get all organizations for the authenticated user from Clerk
  */
 export async function GET() {
   try {
@@ -33,12 +25,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Filter organizations to only show those where user is a member
-    const userOrganizations = organizations.filter(org => 
-      org.members.some((member: any) => member.userId === userId)
+    // Get user's organizations from Clerk
+    const organizations = await ClerkOrganizationClient.getUserOrganizations(userId);
+    
+    // Get full organization details for each
+    const organizationDetails = await Promise.all(
+      organizations.map(async (membership) => {
+        try {
+          const org = await ClerkOrganizationClient.getOrganization(membership.organizationId);
+          return {
+            ...membership,
+            organization: org,
+          };
+        } catch (error) {
+          console.error(`Error fetching organization ${membership.organizationId}:`, error);
+          return null;
+        }
+      })
     );
 
-    return NextResponse.json({ organizations: userOrganizations });
+    // Filter out any failed organization fetches
+    const validOrganizations = organizationDetails.filter(org => org !== null);
+
+    return NextResponse.json({ organizations: validOrganizations });
   } catch (error) {
     console.error('Error fetching organizations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -47,7 +56,7 @@ export async function GET() {
 
 /**
  * POST /api/organizations
- * Create a new organization
+ * Create a new organization in Clerk
  */
 export async function POST(request: Request) {
   try {
@@ -71,56 +80,56 @@ export async function POST(request: Request) {
     const { name } = validationResult.data;
 
     // Check if organization name already exists for this user
-    const existingOrg = organizations.find(org => 
-      org.name.toLowerCase() === name.toLowerCase() && 
-      org.members.some((member: any) => member.userId === userId)
+    const existingOrganizations = await ClerkOrganizationClient.getUserOrganizations(userId);
+    
+    // Get full organization details to check names
+    const organizationDetails = await Promise.all(
+      existingOrganizations.map(async (membership) => {
+        try {
+          return await ClerkOrganizationClient.getOrganization(membership.organizationId);
+        } catch (error) {
+          return null;
+        }
+      })
+    );
+    
+    const nameConflict = organizationDetails.some(org => 
+      org && org.name.toLowerCase() === name.toLowerCase()
     );
 
-    if (existingOrg) {
+    if (nameConflict) {
       return NextResponse.json({ error: 'Organization with this name already exists' }, { status: 409 });
     }
 
-    // Create new organization
-    const newOrg = {
-      id: `org_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Create new organization in Clerk
+    const organization = await ClerkOrganizationClient.createOrganization({
       name: name.trim(),
-      slug: name.trim().toLowerCase().replace(/\s+/g, '-'),
-      createdAt: new Date().toISOString(),
-      members: [
-        { 
-          id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId,
-          email: '', // Will be fetched from Clerk
-          role: 'admin', 
-          status: 'active',
-          joinedAt: new Date().toISOString()
-        }
-      ]
-    };
-
-    organizations.push(newOrg);
+      createdBy: userId,
+    });
 
     return NextResponse.json({ 
-      organization: newOrg,
+      organization,
       message: 'Organization created successfully' 
     }, { status: 201 });
 
   } catch (error) {
     console.error('Error creating organization:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 });
   }
 }
 
 /**
  * PUT /api/organizations
- * Update organization details
+ * Update organization details in Clerk
  */
 export async function PUT(request: Request) {
   try {
     const { userId } = await auth();
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 400 });
     }
 
     const body = await request.json();
@@ -136,49 +145,56 @@ export async function PUT(request: Request) {
 
     const { organizationId, name } = validationResult.data;
 
-    // Find organization and check if user is admin
-    const orgIndex = organizations.findIndex(org => 
-      org.id === organizationId && 
-      org.members.some((member: any) => member.userId === userId && member.role === 'admin')
-    );
-
-    if (orgIndex === -1) {
-      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 404 });
+    // Check if user has admin access to this organization
+    const hasAdminAccess = await ClerkOrganizationClient.hasAdminAccess(userId, organizationId);
+    if (!hasAdminAccess) {
+      return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 400 });
     }
 
     // Check if new name conflicts with existing organizations
-    const nameConflict = organizations.find(org => 
-      org.id !== organizationId && 
-      org.name.toLowerCase() === name.toLowerCase() &&
-      org.members.some((member: any) => member.userId === userId)
+    const existingOrganizations = await ClerkOrganizationClient.getUserOrganizations(userId);
+    
+    // Get full organization details to check names
+    const organizationDetails = await Promise.all(
+      existingOrganizations.map(async (membership) => {
+        try {
+          return await ClerkOrganizationClient.getOrganization(membership.organizationId);
+        } catch (error) {
+          return null;
+        }
+      })
+    );
+    
+    const nameConflict = organizationDetails.some(org => 
+      org && org.id !== organizationId && org.name.toLowerCase() === name.toLowerCase()
     );
 
     if (nameConflict) {
-      return NextResponse.json({ error: 'Organization with this name already exists' }, { status: 409 });
+      return NextResponse.json({ error: 'Organization with this name already exists' }, { status: 400 });
     }
 
-    // Update organization
-    organizations[orgIndex] = {
-      ...organizations[orgIndex],
+    // Update organization in Clerk
+    const updatedOrg = await ClerkOrganizationClient.updateOrganization(organizationId, {
       name: name.trim(),
       slug: name.trim().toLowerCase().replace(/\s+/g, '-'),
-      updatedAt: new Date().toISOString()
-    };
+    });
 
     return NextResponse.json({ 
-      organization: organizations[orgIndex],
+      organization: updatedOrg,
       message: 'Organization updated successfully' 
     });
 
   } catch (error) {
     console.error('Error updating organization:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 });
   }
 }
 
 /**
  * DELETE /api/organizations
- * Delete an organization
+ * Delete an organization from Clerk
  */
 export async function DELETE(request: Request) {
   try {
@@ -195,26 +211,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    // Find organization and check if user is admin
-    const orgIndex = organizations.findIndex(org => 
-      org.id === organizationId && 
-      org.members.some((member: any) => member.userId === userId && member.role === 'admin')
-    );
-
-    if (orgIndex === -1) {
+    // Check if user has admin access to this organization
+    const hasAdminAccess = await ClerkOrganizationClient.hasAdminAccess(userId, organizationId);
+    if (!hasAdminAccess) {
       return NextResponse.json({ error: 'Organization not found or access denied' }, { status: 404 });
     }
 
-    // Remove organization
-    const deletedOrg = organizations.splice(orgIndex, 1)[0];
+    // Delete organization from Clerk
+    await ClerkOrganizationClient.deleteOrganization(organizationId);
 
     return NextResponse.json({ 
-      message: 'Organization deleted successfully',
-      deletedOrganization: deletedOrg
+      message: 'Organization deleted successfully'
     });
 
   } catch (error) {
     console.error('Error deleting organization:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 });
   }
 }
