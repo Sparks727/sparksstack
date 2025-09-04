@@ -9,11 +9,7 @@ import {
   UserIcon, 
   SettingsIcon, 
   HomeIcon, 
-  ShieldIcon,
   UsersIcon,
-  FileTextIcon,
-  BarChart3Icon,
-  KeyIcon,
   LogOutIcon,
   ChevronLeftIcon,
   ChevronRightIcon
@@ -31,8 +27,6 @@ interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  children?: Omit<NavItem, 'children'>[];
 }
 
 export function Sidebar({ className }: SidebarProps) {
@@ -51,58 +45,26 @@ export function Sidebar({ className }: SidebarProps) {
       title: 'Organizations',
       href: '/dashboard/organizations',
       icon: BuildingIcon,
-      children: [
-        {
-          title: 'Overview',
-          href: '/dashboard/organizations',
-          icon: BuildingIcon,
-        },
-        {
-          title: 'Create New',
-          href: '/dashboard/organizations/create',
-          icon: BuildingIcon,
-        },
-        {
-          title: 'Manage',
-          href: '/dashboard/organizations/manage',
-          icon: SettingsIcon,
-        },
-        {
-          title: 'Invite Members',
-          href: '/dashboard/organizations/invite',
-          icon: UsersIcon,
-        },
-      ],
+    },
+    {
+      title: 'Create New',
+      href: '/dashboard/organizations/create',
+      icon: BuildingIcon,
+    },
+    {
+      title: 'Manage',
+      href: '/dashboard/organizations/manage',
+      icon: SettingsIcon,
+    },
+    {
+      title: 'Invite Members',
+      href: '/dashboard/organizations/invite',
+      icon: UsersIcon,
     },
     {
       title: 'Profile',
       href: '/dashboard/profile',
       icon: UserIcon,
-    },
-    {
-      title: 'Settings',
-      href: '/dashboard/settings',
-      icon: SettingsIcon,
-    },
-    {
-      title: 'Security',
-      href: '/dashboard/security',
-      icon: ShieldIcon,
-    },
-    {
-      title: 'Analytics',
-      href: '/dashboard/analytics',
-      icon: BarChart3Icon,
-    },
-    {
-      title: 'Documents',
-      href: '/dashboard/documents',
-      icon: FileTextIcon,
-    },
-    {
-      title: 'API Keys',
-      href: '/dashboard/api-keys',
-      icon: KeyIcon,
     },
   ];
 
@@ -112,44 +74,6 @@ export function Sidebar({ className }: SidebarProps) {
       return pathname === '/dashboard';
     }
     return pathname.startsWith(href);
-  };
-
-  const renderNavItem = (item: NavItem, level: number = 0) => {
-    const isItemActive = isActive(item.href);
-    const hasChildren = item.children && item.children.length > 0;
-    
-    return (
-      <div key={item.href} className="space-y-1">
-        <Link href={item.href}>
-          <Button
-            variant={isItemActive ? "secondary" : "ghost"}
-            className={cn(
-              "w-full justify-start",
-              level > 0 && "ml-4",
-              isCollapsed && "justify-center px-2"
-            )}
-          >
-            <item.icon className={cn("h-4 w-4", level > 0 && "h-3 w-3")} />
-            {!isCollapsed && (
-              <span className={cn("ml-2", level > 0 && "text-sm")}>
-                {item.title}
-              </span>
-            )}
-            {item.badge && !isCollapsed && (
-              <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
-                {item.badge}
-              </span>
-            )}
-          </Button>
-        </Link>
-        
-        {hasChildren && !isCollapsed && (
-          <div className="space-y-1">
-            {item.children!.map((child) => renderNavItem(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -185,7 +109,27 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Navigation */}
         <ScrollArea className="flex-1 px-3 py-4">
           <nav className="space-y-2">
-            {navigation.map((item) => renderNavItem(item))}
+            {navigation.map((item) => {
+              const isItemActive = isActive(item.href);
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={isItemActive ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start",
+                      isCollapsed && "justify-center px-2"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {!isCollapsed && (
+                      <span className="ml-2">
+                        {item.title}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              );
+            })}
           </nav>
         </ScrollArea>
 
@@ -247,4 +191,4 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
     </div>
   );
-} 
+}
