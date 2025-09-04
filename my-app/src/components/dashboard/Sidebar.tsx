@@ -147,21 +147,6 @@ export function Sidebar({ className }: SidebarProps) {
                 </div>
               )}
             </div>
-            
-            {!isCollapsed && (
-              <div className="mt-3">
-                <SignOutButton>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start gap-2 text-xs"
-                  >
-                    <LogOutIcon className="h-3 w-3" />
-                    Sign Out
-                  </Button>
-                </SignOutButton>
-              </div>
-            )}
           </div>
         )}
       </div>

@@ -1,12 +1,13 @@
 "use client";
 
 import { useUser } from '@clerk/nextjs';
-import { useState } from 'react';
-import { Sidebar } from '@/components/dashboard/Sidebar';
+import { useState, useEffect } from 'react';
+import { Sidebar } from '../../components/dashboard/Sidebar';
 import { Button } from '@/components/ui/button';
-import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon } from 'lucide-react';
+import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, LogOutIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+import Link from 'next/link';
+import { SignOutButton } from '@clerk/nextjs';
 
 export default function DashboardLayout({
   children,
@@ -14,8 +15,26 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
+
+  // Auto-collapse sidebar when pathname changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isUserMenuOpen && !(event.target as Element).closest('.user-menu')) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isUserMenuOpen]);
 
   const getPageTitle = () => {
     if (!pathname) return 'Dashboard';
@@ -60,25 +79,63 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          {/* Right side - Logo and user */}
-          <div className="flex items-center gap-3">
-            {/* Sparks Stack Logo */}
-            <div className="flex items-center gap-2">
-              <Image
-                src="/SparksStackLogo.png"
-                alt="Sparks Stack"
-                width={24}
-                height={24}
-                className="w-6 h-6 object-contain"
-              />
-              <span className="text-sm font-medium text-muted-foreground hidden sm:block">
-                Sparks Stack
-              </span>
-            </div>
-
-            {/* User avatar */}
+          {/* Right side - User avatar with dropdown */}
+          <div className="flex items-center">
             {user && (
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <div className="relative user-menu">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="h-8 w-8 p-0 rounded-full"
+                >
+                  {user.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.fullName || 'User'} 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="h-4 w-4 text-primary" />
+                  )}
+                </Button>
+                
+                {/* Mobile User Dropdown */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                    <div className="py-2">
+                      <Link href="/dashboard/profile">
+                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
+                          <UserIcon className="h-4 w-4" />
+                          <span className="text-sm">Profile</span>
+                        </div>
+                      </Link>
+                      <SignOutButton>
+                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
+                          <LogOutIcon className="h-4 w-4" />
+                          <span className="text-sm">Sign Out</span>
+                        </div>
+                      </SignOutButton>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:flex fixed top-0 right-0 left-64 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-end px-6 py-3 w-full">
+          {user && (
+            <div className="relative user-menu">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="h-9 px-3 py-2 flex items-center gap-2 hover:bg-muted"
+              >
                 {user.imageUrl ? (
                   <img 
                     src={user.imageUrl} 
@@ -86,11 +143,37 @@ export default function DashboardLayout({
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
-                  <UserIcon className="h-4 w-4 text-primary" />
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <UserIcon className="h-4 w-4 text-primary" />
+                  </div>
                 )}
-              </div>
-            )}
-          </div>
+                <span className="text-sm font-medium">
+                  {user.fullName || user.username || 'User'}
+                </span>
+                <ChevronDownIcon className="h-4 w-4" />
+              </Button>
+              
+              {/* Desktop User Dropdown */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                  <div className="py-2">
+                    <Link href="/dashboard/profile">
+                      <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
+                        <UserIcon className="h-4 w-4" />
+                        <span className="text-sm">Profile</span>
+                      </div>
+                    </Link>
+                    <SignOutButton>
+                      <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
+                        <LogOutIcon className="h-4 w-4" />
+                        <span className="text-sm">Sign Out</span>
+                      </div>
+                    </SignOutButton>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -114,6 +197,8 @@ export default function DashboardLayout({
       <main className="flex-1 overflow-auto w-full lg:w-auto">
         {/* Mobile Header Spacer */}
         <div className="lg:hidden h-20" />
+        {/* Desktop Header Spacer */}
+        <div className="hidden lg:block h-16" />
         {children}
       </main>
     </div>
