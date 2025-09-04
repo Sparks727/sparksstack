@@ -47,21 +47,6 @@ export function Sidebar({ className }: SidebarProps) {
       icon: BuildingIcon,
     },
     {
-      title: 'Create New',
-      href: '/dashboard/organizations/create',
-      icon: BuildingIcon,
-    },
-    {
-      title: 'Manage',
-      href: '/dashboard/organizations/manage',
-      icon: SettingsIcon,
-    },
-    {
-      title: 'Invite Members',
-      href: '/dashboard/organizations/invite',
-      icon: UsersIcon,
-    },
-    {
       title: 'Profile',
       href: '/dashboard/profile',
       icon: UserIcon,

@@ -3,7 +3,7 @@
 import { OrganizationProfile } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftIcon, SettingsIcon, ShieldIcon, UsersIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ManageOrganizationPage() {
@@ -24,45 +24,6 @@ export default function ManageOrganizationPage() {
               Configure settings, manage members, and control access
             </p>
           </div>
-        </div>
-
-        {/* Information Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <SettingsIcon className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h4 className="font-medium text-blue-900">Settings</h4>
-                  <p className="text-sm text-blue-700">Organization configuration</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <UsersIcon className="h-5 w-5 text-green-600" />
-                <div>
-                  <h4 className="font-medium text-green-900">Members</h4>
-                  <p className="text-sm text-green-700">Team management</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <ShieldIcon className="h-5 w-5 text-purple-600" />
-                <div>
-                  <h4 className="font-medium text-purple-900">Security</h4>
-                  <p className="text-sm text-purple-700">Access control & policies</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Clerk Organization Profile Component */}
@@ -131,22 +92,30 @@ export default function ManageOrganizationPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="text-center p-4 border rounded-lg">
-                <UsersIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <div className="h-8 w-8 mx-auto mb-2 text-primary flex items-center justify-center">
+                  <span className="text-lg">👥</span>
+                </div>
                 <h5 className="font-medium">Invite Members</h5>
                 <p className="text-sm text-muted-foreground">Add new team members</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
-                <ShieldIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <div className="h-8 w-8 mx-auto mb-2 text-primary flex items-center justify-center">
+                  <span className="text-lg">🔐</span>
+                </div>
                 <h5 className="font-medium">Manage Roles</h5>
                 <p className="text-sm text-muted-foreground">Change member permissions</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
-                <SettingsIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <div className="h-8 w-8 mx-auto mb-2 text-primary flex items-center justify-center">
+                  <span className="text-lg">⚙️</span>
+                </div>
                 <h5 className="font-medium">Update Settings</h5>
                 <p className="text-sm text-muted-foreground">Modify organization details</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
-                <ShieldIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <div className="h-8 w-8 mx-auto mb-2 text-primary flex items-center justify-center">
+                  <span className="text-lg">🛡️</span>
+                </div>
                 <h5 className="font-medium">Security</h5>
                 <p className="text-sm text-muted-foreground">Configure access policies</p>
               </div>

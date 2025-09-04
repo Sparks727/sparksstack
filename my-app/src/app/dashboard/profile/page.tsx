@@ -2,32 +2,103 @@
 
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   UserIcon, 
-  MailIcon, 
   CalendarIcon, 
   ShieldIcon,
   CameraIcon,
-  EditIcon,
-  SaveIcon,
-  XIcon
+  CheckIcon,
+  LoaderIcon
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/components/ui/use-toast';
 
 export default function ProfilePage() {
   const { user } = useUser();
-  const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     username: user?.username || '',
   });
+
+  // Debounced auto-save function
+  const debouncedSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (newData: typeof formData) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          handleAutoSave(newData);
+        }, 1000); // 1 second delay
+      };
+    })(),
+    []
+  );
+
+  // Auto-save when form data changes
+  useEffect(() => {
+    if (user && (formData.firstName !== user.firstName || 
+                  formData.lastName !== user.lastName || 
+                  formData.username !== user.username)) {
+      debouncedSave(formData);
+    }
+  }, [formData, user, debouncedSave]);
+
+  // Update form data when user data changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        username: user.username || '',
+      });
+    }
+  }, [user]);
+
+  const handleAutoSave = async (data: typeof formData) => {
+    if (!user || isSaving) return;
+
+    // Don't save if no changes
+    if (data.firstName === user.firstName && 
+        data.lastName === user.lastName && 
+        data.username === user.username) {
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      await user.update({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+      });
+      
+      setLastSaved(new Date());
+      
+      // Show subtle success indicator
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been automatically saved.",
+      });
+      
+    } catch (error) {
+      console.error('Error auto-saving profile:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save profile changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -117,40 +188,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSave = async () => {
-    if (!user) return;
-
-    try {
-      await user.update({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-      });
-      
-      setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Profile updated successfully!",
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      username: user?.username || '',
-    });
-    setIsEditing(false);
-  };
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -158,7 +195,7 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
           <p className="text-muted-foreground">
-            Manage your account settings and profile information
+            Edit your profile information below. Changes are automatically saved.
           </p>
         </div>
 
@@ -211,7 +248,24 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Form Section */}
+            {/* Auto-save Status */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {isSaving ? (
+                <>
+                  <LoaderIcon className="h-4 w-4 animate-spin" />
+                  <span>Saving changes...</span>
+                </>
+              ) : lastSaved ? (
+                <>
+                  <CheckIcon className="h-4 w-4 text-green-600" />
+                  <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                </>
+              ) : (
+                <span>Start typing to see auto-save in action</span>
+              )}
+            </div>
+
+            {/* Form Section - Always Editable */}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -219,8 +273,8 @@ export default function ProfilePage() {
                   <Input
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    disabled={!isEditing}
                     placeholder="First name"
+                    className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
                 
@@ -229,8 +283,8 @@ export default function ProfilePage() {
                   <Input
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    disabled={!isEditing}
                     placeholder="Last name"
+                    className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
@@ -240,8 +294,8 @@ export default function ProfilePage() {
                 <Input
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  disabled={!isEditing}
                   placeholder="Username"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
@@ -256,27 +310,6 @@ export default function ProfilePage() {
                   Email address cannot be changed from this page
                 </p>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-2">
-              {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
-                  <EditIcon className="h-4 w-4" />
-                  Edit Profile
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={handleCancel} className="flex items-center gap-2">
-                    <XIcon className="h-4 w-4" />
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave} className="flex items-center gap-2">
-                    <SaveIcon className="h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -300,9 +333,9 @@ export default function ProfilePage() {
                   Update your password to keep your account secure
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <button className="px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors">
                 Change Password
-              </Button>
+              </button>
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -312,9 +345,9 @@ export default function ProfilePage() {
                   Add an extra layer of security to your account
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <button className="px-3 py-2 text-sm border rounded-md hover:bg-muted transition-colors">
                 Enable 2FA
-              </Button>
+              </button>
             </div>
           </CardContent>
         </Card>

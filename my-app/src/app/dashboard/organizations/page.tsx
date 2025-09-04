@@ -10,7 +10,9 @@ import {
   SettingsIcon, 
   CrownIcon,
   ShieldIcon,
-  CameraIcon
+  CameraIcon,
+  UsersIcon,
+  UserPlusIcon
 } from 'lucide-react';
 
 export default function OrganizationsDashboard() {
@@ -41,13 +43,15 @@ export default function OrganizationsDashboard() {
               Manage your organizations and team members
             </p>
           </div>
-          <Button 
-            onClick={() => window.location.href = '/dashboard/organizations/create'}
-            className="flex items-center gap-2"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Create Organization
-          </Button>
+          {!organization && (
+            <Button 
+              onClick={() => window.location.href = '/dashboard/organizations/create'}
+              className="flex items-center gap-2"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Create Organization
+            </Button>
+          )}
         </div>
 
         {/* Current Organization */}
@@ -91,13 +95,65 @@ export default function OrganizationsDashboard() {
                     <ShieldIcon className="h-3 w-3" />
                     Active
                   </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.location.href = '/dashboard/organizations/manage'}
-                  >
-                    <SettingsIcon className="h-4 w-4" />
-                    Manage
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Organization Management Section */}
+        {organization && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <SettingsIcon className="h-5 w-5" />
+                Organization Management
+              </CardTitle>
+              <CardDescription>
+                Manage your organization settings, members, and security policies
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Member Management */}
+                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-3">
+                    <UsersIcon className="h-6 w-6 text-primary" />
+                    <h4 className="font-medium">Members</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Manage team members, roles, and permissions
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Manage Members
+                  </Button>
+                </div>
+
+                {/* Invite Members */}
+                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-3">
+                    <UserPlusIcon className="h-6 w-6 text-primary" />
+                    <h4 className="font-medium">Invite Members</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Send invitations to new team members
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Invite Members
+                  </Button>
+                </div>
+
+                {/* Organization Settings */}
+                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-3">
+                    <SettingsIcon className="h-6 w-6 text-primary" />
+                    <h4 className="font-medium">Settings</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Configure organization preferences and policies
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Configure Settings
                   </Button>
                 </div>
               </div>
@@ -105,153 +161,11 @@ export default function OrganizationsDashboard() {
           </Card>
         )}
 
-        {/* All Organizations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BuildingIcon className="h-5 w-5" />
-              Your Organizations
-            </CardTitle>
-            <CardDescription>
-              Switch between organizations or manage your memberships
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {userMemberships.data && userMemberships.data.length > 0 ? (
-              <div className="space-y-4">
-                {userMemberships.data.map((membership) => (
-                  <div
-                    key={membership.organization.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${
-                      organization?.id === membership.organization.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <BuildingIcon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">{membership.organization.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Your role: <Badge variant="outline">{membership.role}</Badge>
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {membership.organization.membersCount || 0} members
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {organization?.id !== membership.organization.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSwitchOrganization(membership.organization.id)}
-                        >
-                          Switch to
-                        </Button>
-                      )}
-                      
-                      {membership.role === 'admin' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.location.href = '/dashboard/organizations/manage'}
-                        >
-                          <SettingsIcon className="h-4 w-4 mr-2" />
-                          Admin
-                        </Button>
-                      )}
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.location.href = '/dashboard/organizations/manage'}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Leave
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <BuildingIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>No organizations yet</p>
-                <p className="text-sm">Create your first organization to get started</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" 
-                onClick={() => window.location.href = '/dashboard/organizations/create'}>
-            <CardContent className="p-6 text-center">
-              <PlusIcon className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Create Organization</h3>
-              <p className="text-sm text-muted-foreground">
-                Start a new organization for your team
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/organizations/manage'}>
-            <CardContent className="p-6 text-center">
-              <SettingsIcon className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Manage Organization</h3>
-              <p className="text-sm text-muted-foreground">
-                Configure settings and manage members
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => window.location.href = '/dashboard/organizations/invite'}>
-            <CardContent className="p-6 text-center">
-              <BuildingIcon className="h-8 w-8 mx-auto mb-3 text-primary" />
-              <h3 className="font-semibold mb-2">Invite Members</h3>
-              <p className="text-sm text-muted-foreground">
-                Add new team members to your organization
-              </p>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Information Card */}
-        <Card className="bg-muted/50">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <ShieldIcon className="h-5 w-5 text-primary" />
-              Security & Best Practices
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-              <div>
-                <h4 className="font-medium text-foreground mb-2">Organization Security</h4>
-                <ul className="space-y-1">
-                  <li>• Role-based access control</li>
-                  <li>• Secure member invitations</li>
-                  <li>• Audit logs for all changes</li>
-                  <li>• SSO integration support</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-2">Member Management</h4>
-                <ul className="space-y-1">
-                  <li>• Email-based invitations</li>
-                  <li>• Role assignment (Admin/Member)</li>
-                  <li>• Member removal and role changes</li>
-                  <li>• Organization transfer capabilities</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   );
