@@ -14,6 +14,7 @@ import {
   UsersIcon,
   UserPlusIcon
 } from 'lucide-react';
+import { OrganizationProfile } from '@clerk/nextjs';
 
 export default function OrganizationsDashboard() {
   const { user } = useUser();
@@ -105,57 +106,27 @@ export default function OrganizationsDashboard() {
         {organization && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                Organization Management
-              </CardTitle>
+              <CardTitle>Organization Management</CardTitle>
               <CardDescription>
-                Manage your organization settings, members, and security policies
+                Use the panel below to manage your organization settings, members, and security policies.
+                All changes are automatically saved and secured by Clerk.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Member Management */}
-                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    <UsersIcon className="h-6 w-6 text-primary" />
-                    <h4 className="font-medium">Members</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Manage team members, roles, and permissions
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Manage Members
-                  </Button>
-                </div>
-
-                {/* Invite Members */}
-                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    <UserPlusIcon className="h-6 w-6 text-primary" />
-                    <h4 className="font-medium">Invite Members</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Send invitations to new team members
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Invite Members
-                  </Button>
-                </div>
-
-                {/* Organization Settings */}
-                <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    <SettingsIcon className="h-6 w-6 text-primary" />
-                    <h4 className="font-medium">Settings</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Configure organization preferences and policies
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Configure Settings
-                  </Button>
-                </div>
+              <div className="flex justify-center">
+                <OrganizationProfile 
+                  appearance={{
+                    elements: {
+                      formButtonPrimary: 'bg-primary hover:bg-primary/90 text-primary-foreground',
+                      card: 'shadow-none',
+                      headerTitle: 'text-2xl font-bold',
+                      headerSubtitle: 'text-muted-foreground',
+                      pageScrollBox: 'max-h-[800px]',
+                    }
+                  }}
+                  path="/dashboard/organizations"
+                  routing="path"
+                />
               </div>
             </CardContent>
           </Card>

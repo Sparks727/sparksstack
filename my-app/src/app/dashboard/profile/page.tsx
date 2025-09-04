@@ -233,7 +233,10 @@ export default function ProfilePage() {
               </div>
               
               <div className="flex-1">
-                <h3 className="text-lg font-semibold">{user?.fullName || 'User'}</h3>
+                <h3 className="text-lg font-semibold">{user?.fullName || user?.username || 'User'}</h3>
+                {user?.username && (
+                  <p className="text-sm text-muted-foreground">@{user.username}</p>
+                )}
                 <p className="text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="flex items-center gap-1">
