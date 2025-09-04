@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { SignOutButton } from '@clerk/nextjs';
+import Image from 'next/image';
 
 interface SidebarProps {
   className?: string;
@@ -70,11 +71,17 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b px-4">
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">S</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <Image
+                  src="/SparksStackLogo.png"
+                  alt="Sparks Stack Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                />
               </div>
-              <span className="font-semibold">SparksStack</span>
+              <span className="font-semibold">Sparks Stack</span>
             </div>
           )}
           <Button
