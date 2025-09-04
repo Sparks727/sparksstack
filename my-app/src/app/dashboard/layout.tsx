@@ -17,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -55,6 +56,10 @@ export default function DashboardLayout({
       return <BuildingIcon className="h-5 w-5" />;
     }
     return <HomeIcon className="h-5 w-5" />;
+  };
+
+  const handleSidebarToggle = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   return (
