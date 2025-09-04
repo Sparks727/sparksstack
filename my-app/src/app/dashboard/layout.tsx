@@ -4,7 +4,9 @@ import { useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { Button } from '@/components/ui/button';
-import { MenuIcon, XIcon } from 'lucide-react';
+import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function DashboardLayout({
   children,
@@ -12,23 +14,84 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const { user } = useUser();
+
+  const getPageTitle = () => {
+    if (!pathname) return 'Dashboard';
+    if (pathname === '/dashboard') return 'Dashboard';
+    if (pathname === '/dashboard/profile') return 'Profile';
+    if (pathname === '/dashboard/organizations') return 'Organizations';
+    if (pathname.startsWith('/dashboard/organizations/')) return 'Organizations';
+    if (pathname.startsWith('/dashboard/')) return 'Dashboard';
+    return 'Dashboard';
+  };
+
+  const getPageIcon = () => {
+    if (!pathname) return <HomeIcon className="h-5 w-5" />;
+    if (pathname === '/dashboard') return <HomeIcon className="h-5 w-5" />;
+    if (pathname === '/dashboard/profile') return <UserIcon className="h-5 w-5" />;
+    if (pathname === '/dashboard/organizations' || pathname.startsWith('/dashboard/organizations/')) {
+      return <BuildingIcon className="h-5 w-5" />;
+    }
+    return <HomeIcon className="h-5 w-5" />;
+  };
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="h-10 w-10 p-0 bg-background/80 backdrop-blur-sm border-border/50"
-        >
-          {isMobileMenuOpen ? (
-            <XIcon className="h-5 w-5" />
-          ) : (
-            <MenuIcon className="h-5 w-5" />
-          )}
-        </Button>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Left side - Menu button and page info */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="h-9 w-9 p-0"
+            >
+              <MenuIcon className="h-5 w-5" />
+            </Button>
+            
+            {/* Page title and icon */}
+            <div className="flex items-center gap-2">
+              {getPageIcon()}
+              <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
+            </div>
+          </div>
+
+          {/* Right side - Logo and user */}
+          <div className="flex items-center gap-3">
+            {/* Sparks Stack Logo */}
+            <div className="flex items-center gap-2">
+              <Image
+                src="/SparksStackLogo.png"
+                alt="Sparks Stack"
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain"
+              />
+              <span className="text-sm font-medium text-muted-foreground hidden sm:block">
+                Sparks Stack
+              </span>
+            </div>
+
+            {/* User avatar */}
+            {user && (
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                {user.imageUrl ? (
+                  <img 
+                    src={user.imageUrl} 
+                    alt={user.fullName || 'User'} 
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="h-4 w-4 text-primary" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}
