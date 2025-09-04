@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../../components/dashboard/Sidebar';
 import { Button } from '@/components/ui/button';
-import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, LogOutIcon } from 'lucide-react';
+import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, LogOutIcon, ChevronRightIcon, ChevronLeftIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SignOutButton } from '@clerk/nextjs';
@@ -67,7 +67,7 @@ export default function DashboardLayout({
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Left side - Menu button and page info */}
+          {/* Left side - Menu button, page info, and collapse button */}
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -83,6 +83,20 @@ export default function DashboardLayout({
               {getPageIcon()}
               <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
             </div>
+            
+            {/* Collapse button for mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSidebarToggle}
+              className="h-9 w-9 p-0"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRightIcon className="h-5 w-5" />
+              ) : (
+                <ChevronLeftIcon className="h-5 w-5" />
+              )}
+            </Button>
           </div>
 
           {/* Right side - User avatar with dropdown */}
@@ -134,8 +148,8 @@ export default function DashboardLayout({
       {/* Desktop Header - Full width across top */}
       <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-3 w-full">
-          {/* Left side - Sparks Stack Logo and Name */}
-          <div className="flex items-center gap-3">
+          {/* Left side - Sparks Stack Logo, Name, and Collapse Button */}
+          <div className="flex items-center gap-4">
             <Image
               src="/SparksStackLogo.png"
               alt="Sparks Stack"
@@ -144,6 +158,18 @@ export default function DashboardLayout({
               className="w-8 h-8 object-contain"
             />
             <span className="text-lg font-semibold">Sparks Stack</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSidebarToggle}
+              className="h-8 w-8 p-0 ml-2"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRightIcon className="h-4 w-4" />
+              ) : (
+                <ChevronLeftIcon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
 
           {/* Right side - User avatar with dropdown */}

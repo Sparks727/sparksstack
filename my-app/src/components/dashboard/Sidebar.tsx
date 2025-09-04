@@ -85,21 +85,21 @@ export function Sidebar({ className, isCollapsed: externalCollapsed, onToggleCol
         '--sidebar-width': isCollapsed ? '4rem' : '16rem'
       } as React.CSSProperties}
       >
-        {/* Header */}
-        <div className="flex h-16 items-center justify-end border-b px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleCollapse}
-            className="h-8 w-8 p-0"
-          >
-            {isCollapsed ? (
-              <ChevronRightIcon className="h-4 w-4" />
-            ) : (
-              <ChevronLeftIcon className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+        {/* Header - Only show when not collapsed */}
+        {!isCollapsed && (
+          <div className="flex h-16 items-center justify-center border-b px-4">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/SparksStackLogo.png"
+                alt="Sparks Stack"
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain"
+              />
+              <span className="text-sm font-semibold">Sparks Stack</span>
+            </div>
+          </div>
+        )}
 
         {/* Navigation */}
         <ScrollArea className="flex-1 px-3 py-4">
