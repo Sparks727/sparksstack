@@ -1,30 +1,17 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-
-// Create route matcher for protected routes
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
-  '/api/organizations(.*)',
-  '/api/upload(.*)',
-]);
-
-// Create route matcher for public routes
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/auth(.*)',
-]);
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
 export default clerkMiddleware((auth, req) => {
+  const path = req.nextUrl.pathname;
+  
   // Allow public routes
-  if (isPublicRoute(req)) {
+  const publicPaths = ['/', '/sign-in', '/sign-up', '/api/auth'];
+  if (publicPaths.some(publicPath => path.startsWith(publicPath))) {
     return;
   }
-
-  // Protect all other routes
-  if (isProtectedRoute(req)) {
-    return auth().protect();
-  }
+  
+  // For protected routes, Clerk will automatically handle authentication
+  // If user is not authenticated, they'll be redirected to sign-in
+  return;
 });
 
 export const config = {
