@@ -2,19 +2,57 @@
 
 import { useUser } from '@clerk/nextjs';
 import { SignOutButton } from '@clerk/nextjs';
+import { useState } from 'react';
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, UserIcon, ShieldIcon, MailIcon, KeyIcon } from "lucide-react";
+import { CalendarIcon, UserIcon, ShieldIcon, MailIcon, KeyIcon, CameraIcon } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [isUploading, setIsUploading] = useState(false);
   
   const handlePasswordReset = () => {
     // Redirect to sign-in page for password reset
     window.location.href = '/sign-in?redirect_url=' + encodeURIComponent('/dashboard');
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Upload to Clerk's user profile
+      await user.setProfileImage({ file });
+      
+      // Refresh the page to show the new image
+      window.location.reload();
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   return (
@@ -35,7 +73,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">
-                Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress || "User"}
+                Welcome, {user?.username || user?.firstName || "User"}
               </span>
               <SignOutButton>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -150,16 +188,50 @@ export default function DashboardPage() {
               <CardContent className="space-y-6">
                 {/* Profile Image Section */}
                 <div className="flex items-center space-x-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
-                    <AvatarFallback className="text-2xl">
-                      {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
+                      <AvatarFallback className="text-2xl">
+                        {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Avatar Upload Section */}
+                    <div className="mt-3 space-y-2">
+                      <label htmlFor="avatar-upload" className="cursor-pointer">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full flex items-center gap-2"
+                          disabled={isUploading}
+                        >
+                          <CameraIcon className="h-4 w-4" />
+                          {isUploading ? 'Uploading...' : 'Change Photo'}
+                        </Button>
+                      </label>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        JPG, PNG or GIF. Max 5MB.
+                      </p>
+                    </div>
+                  </div>
+                  
                   <div>
                     <h3 className="text-xl font-semibold">
                       {user?.firstName} {user?.lastName}
                     </h3>
+                    {user?.username && (
+                      <p className="text-lg font-medium text-primary mb-1">
+                        @{user.username}
+                      </p>
+                    )}
                     <p className="text-muted-foreground">
                       {user?.emailAddresses[0]?.emailAddress}
                     </p>
