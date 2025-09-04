@@ -18,21 +18,27 @@ export default function DashboardLayout({
     }
   }, [isLoaded, isSignedIn]);
 
-  // Show nothing while checking authentication
-  if (!isLoaded || !isSignedIn) {
+  // Show loading state while checking authentication
+  if (!isLoaded) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="h-screen w-full flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
+  // Redirect if not signed in
+  if (!isSignedIn) {
+    return null; // This will trigger the redirect in useEffect
+  }
+
   // Render the dashboard with the protected children
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto">
-        {children}
-      </div>
+    <div className="min-h-screen bg-background">
+      {children}
     </div>
   );
 } 
