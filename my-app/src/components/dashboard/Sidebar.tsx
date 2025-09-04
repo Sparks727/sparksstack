@@ -73,20 +73,12 @@ export function Sidebar({ className }: SidebarProps) {
       } as React.CSSProperties}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b px-4">
-          {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">S</span>
-              </div>
-              <span className="font-semibold">Sparks Stack</span>
-            </div>
-          )}
+        <div className="flex h-16 items-center justify-end border-b px-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 p-0 lg:flex hidden"
+            className="h-8 w-8 p-0"
           >
             {isCollapsed ? (
               <ChevronRightIcon className="h-4 w-4" />

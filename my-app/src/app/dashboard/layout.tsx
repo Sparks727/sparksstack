@@ -8,6 +8,7 @@ import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, Log
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SignOutButton } from '@clerk/nextjs';
+import Image from 'next/image';
 
 export default function DashboardLayout({
   children,
@@ -125,56 +126,70 @@ export default function DashboardLayout({
         </div>
       </div>
 
-      {/* Desktop Header */}
-      <div className="hidden lg:flex fixed top-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300"
-           style={{ left: 'var(--sidebar-width, 16rem)' }}>
-        <div className="flex items-center justify-end px-6 py-3 w-full">
-          {user && (
-            <div className="relative user-menu">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="h-9 px-3 py-2 flex items-center gap-2 hover:bg-muted"
-              >
-                {user.imageUrl ? (
-                  <img 
-                    src={user.imageUrl} 
-                    alt={user.fullName || 'User'} 
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-4 w-4 text-primary" />
+      {/* Desktop Header - Full width across top */}
+      <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-6 py-3 w-full">
+          {/* Left side - Sparks Stack Logo and Name */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/SparksStackLogo.png"
+              alt="Sparks Stack"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+            />
+            <span className="text-lg font-semibold">Sparks Stack</span>
+          </div>
+
+          {/* Right side - User avatar with dropdown */}
+          <div className="flex items-center">
+            {user && (
+              <div className="relative user-menu">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="h-9 px-3 py-2 flex items-center gap-2 hover:bg-muted"
+                >
+                  {user.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.fullName || 'User'} 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">
+                    {user.fullName || user.username || 'User'}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+                
+                {/* Desktop User Dropdown */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                    <div className="py-2">
+                      <Link href="/dashboard/profile">
+                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
+                          <UserIcon className="h-4 w-4" />
+                          <span className="text-sm">Profile</span>
+                        </div>
+                      </Link>
+                      <SignOutButton>
+                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
+                          <LogOutIcon className="h-4 w-4" />
+                          <span className="text-sm">Sign Out</span>
+                        </div>
+                      </SignOutButton>
+                    </div>
                   </div>
                 )}
-                <span className="text-sm font-medium">
-                  {user.fullName || user.username || 'User'}
-                </span>
-                <ChevronDownIcon className="h-4 w-4" />
-              </Button>
-              
-              {/* Desktop User Dropdown */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
-                  <div className="py-2">
-                    <Link href="/dashboard/profile">
-                      <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
-                        <UserIcon className="h-4 w-4" />
-                        <span className="text-sm">Profile</span>
-                      </div>
-                    </Link>
-                    <SignOutButton>
-                      <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
-                        <LogOutIcon className="h-4 w-4" />
-                        <span className="text-sm">Sign Out</span>
-                      </div>
-                    </SignOutButton>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
