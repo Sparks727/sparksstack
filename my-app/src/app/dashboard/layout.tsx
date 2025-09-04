@@ -126,7 +126,8 @@ export default function DashboardLayout({
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden lg:flex fixed top-0 right-0 left-64 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="hidden lg:flex fixed top-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300"
+           style={{ left: 'var(--sidebar-width, 16rem)' }}>
         <div className="flex items-center justify-end px-6 py-3 w-full">
           {user && (
             <div className="relative user-menu">

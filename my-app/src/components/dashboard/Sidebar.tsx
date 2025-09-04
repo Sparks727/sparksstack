@@ -67,19 +67,17 @@ export function Sidebar({ className }: SidebarProps) {
       <div className={cn(
         "flex flex-col border-r bg-background transition-all duration-300 shadow-lg lg:shadow-none",
         isCollapsed ? "w-16" : "w-64"
-      )}>
+      )}
+      style={{ 
+        '--sidebar-width': isCollapsed ? '4rem' : '16rem'
+      } as React.CSSProperties}
+      >
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b px-4">
           {!isCollapsed && (
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <Image
-                  src="/SparksStackLogo.png"
-                  alt="Sparks Stack Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 object-contain"
-                />
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">S</span>
               </div>
               <span className="font-semibold">Sparks Stack</span>
             </div>
