@@ -2,13 +2,13 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
-import { Sidebar } from '../../components/dashboard/Sidebar';
 import { Button } from '@/components/ui/button';
-import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, LogOutIcon, ChevronRightIcon, ChevronLeftIcon } from 'lucide-react';
+import { MenuIcon, XIcon, UserIcon, BuildingIcon, HomeIcon, ChevronDownIcon, LogOutIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SignOutButton } from '@clerk/nextjs';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
   children,
@@ -17,7 +17,6 @@ export default function DashboardLayout({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
 
@@ -58,8 +57,30 @@ export default function DashboardLayout({
     return <HomeIcon className="h-5 w-5" />;
   };
 
-  const handleSidebarToggle = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+  const navigation = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: HomeIcon,
+    },
+    {
+      title: 'Organizations',
+      href: '/dashboard/organizations',
+      icon: BuildingIcon,
+    },
+    {
+      title: 'Profile',
+      href: '/dashboard/profile',
+      icon: UserIcon,
+    },
+  ];
+
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
   };
 
   return (
@@ -67,7 +88,7 @@ export default function DashboardLayout({
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Left side - Menu button, page info, and collapse button */}
+          {/* Left side - Menu button and page info */}
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -83,20 +104,6 @@ export default function DashboardLayout({
               {getPageIcon()}
               <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
             </div>
-            
-            {/* Collapse button for mobile */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSidebarToggle}
-              className="h-9 w-9 p-0"
-            >
-              {isSidebarCollapsed ? (
-                <ChevronRightIcon className="h-5 w-5" />
-              ) : (
-                <ChevronLeftIcon className="h-5 w-5" />
-              )}
-            </Button>
           </div>
 
           {/* Right side - User avatar with dropdown */}
@@ -148,28 +155,37 @@ export default function DashboardLayout({
       {/* Desktop Header - Full width across top */}
       <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-3 w-full">
-          {/* Left side - Sparks Stack Logo, Name, and Collapse Button */}
-          <div className="flex items-center gap-4">
-            <Image
-              src="/SparksStackLogo.png"
-              alt="Sparks Stack"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain"
-            />
-            <span className="text-lg font-semibold">Sparks Stack</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSidebarToggle}
-              className="h-8 w-8 p-0 ml-2"
-            >
-              {isSidebarCollapsed ? (
-                <ChevronRightIcon className="h-4 w-4" />
-              ) : (
-                <ChevronLeftIcon className="h-4 w-4" />
-              )}
-            </Button>
+          {/* Left side - Sparks Stack Logo, Name, and Navigation */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/SparksStackLogo.png"
+                alt="Sparks Stack"
+                width={32}
+                height={32}
+                className="w-8 h-8 object-contain"
+              />
+              <span className="text-lg font-semibold">Sparks Stack</span>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="flex items-center gap-1">
+              {navigation.map((item) => {
+                const isItemActive = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isItemActive ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 px-3"
+                    >
+                      <item.icon className="h-4 w-4 mr-2" />
+                      {item.title}
+                    </Button>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
           {/* Right side - User avatar with dropdown */}
@@ -232,19 +248,86 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar - Hidden on mobile, visible on desktop */}
+      {/* Mobile Side Navigation */}
       <div className={`
-        fixed lg:relative z-50 transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        lg:hidden fixed left-0 top-0 h-full w-64 bg-background border-r border-border z-50
+        transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <Sidebar 
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={handleSidebarToggle}
-        />
+        <div className="flex flex-col h-full">
+          {/* Mobile Side Nav Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/SparksStackLogo.png"
+                alt="Sparks Stack"
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain"
+              />
+              <span className="text-lg font-semibold">Sparks Stack</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="h-8 w-8 p-0"
+            >
+              <XIcon className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {/* Mobile Navigation */}
+          <nav className="flex-1 p-4">
+            <div className="space-y-2">
+              {navigation.map((item) => {
+                const isItemActive = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <div className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                      isItemActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                    )}>
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+          
+          {/* Mobile User Section */}
+          {user && (
+            <div className="border-t p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                  {user.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.fullName || 'User'} 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {user.fullName || user.username || 'User'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.primaryEmailAddress?.emailAddress}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto w-full lg:w-auto">
+      <main className="flex-1 overflow-auto w-full">
         {/* Mobile Header Spacer */}
         <div className="lg:hidden h-20" />
         {/* Desktop Header Spacer */}
