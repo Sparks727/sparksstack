@@ -22,6 +22,8 @@ import Image from 'next/image';
 
 interface SidebarProps {
   className?: string;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface NavItem {
@@ -30,11 +32,22 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, isCollapsed: externalCollapsed, onToggleCollapse }: SidebarProps) {
   const { user } = useUser();
   const { organization } = useOrganization();
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  
+  // Use external collapsed state if provided, otherwise use internal
+  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
+  
+  const handleToggleCollapse = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      setInternalCollapsed(!internalCollapsed);
+    }
+  };
 
   const navigation: NavItem[] = [
     {
@@ -77,7 +90,7 @@ export function Sidebar({ className }: SidebarProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleToggleCollapse}
             className="h-8 w-8 p-0"
           >
             {isCollapsed ? (
