@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { SignOutButton } from '@clerk/nextjs';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 
 export default function DashboardLayout({
   children,
@@ -84,20 +86,14 @@ export default function DashboardLayout({
   };
 
   return (
+    <SidebarProvider>
     <div className="flex h-screen bg-background">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Left side - Menu button and page info */}
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="h-9 w-9 p-0"
-            >
-              <MenuIcon className="h-5 w-5" />
-            </Button>
+            <SidebarTrigger className="h-9 w-9 p-0" />
             
             {/* Page title and icon */}
             <div className="flex items-center gap-2">
@@ -240,91 +236,8 @@ export default function DashboardLayout({
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Side Navigation */}
-      <div className={`
-        lg:hidden fixed left-0 top-0 h-full w-64 bg-background border-r border-border z-50
-        transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div className="flex flex-col h-full">
-          {/* Mobile Side Nav Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              <Image
-                src="/SparksStackLogo.png"
-                alt="Sparks Stack"
-                width={24}
-                height={24}
-                className="w-6 h-6 object-contain"
-              />
-              <span className="text-lg font-semibold">Sparks Stack</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="h-8 w-8 p-0"
-            >
-              <XIcon className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          {/* Mobile Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-2">
-              {navigation.map((item) => {
-                const isItemActive = isActive(item.href);
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <div className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                      isItemActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                    )}>
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-          
-          {/* Mobile User Section */}
-          {user && (
-            <div className="border-t p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  {user.imageUrl ? (
-                    <img 
-                      src={user.imageUrl} 
-                      alt={user.fullName || 'User'} 
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <UserIcon className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {user.fullName || user.username || 'User'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.primaryEmailAddress?.emailAddress}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Shadcn Sidebar (mobile offcanvas) */}
+      <AppSidebar className="md:hidden" />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto w-full">
@@ -335,5 +248,6 @@ export default function DashboardLayout({
         {children}
       </main>
     </div>
+    </SidebarProvider>
   );
 } 
