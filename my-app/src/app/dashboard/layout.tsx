@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { SignOutButton } from '@clerk/nextjs';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 
 export default function DashboardLayout({
@@ -88,149 +88,72 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
     <div className="flex h-screen bg-background">
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          {/* Left side - Menu button and page info */}
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="h-9 w-9 p-0" />
-            
-            {/* Page title and icon */}
+      <SidebarInset>
+        {/* Inset Header */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="flex h-14 items-center gap-3 px-4">
+            <SidebarTrigger />
             <div className="flex items-center gap-2">
               {getPageIcon()}
-              <h1 className="text-lg font-semibold">{getPageTitle()}</h1>
+              <h1 className="text-base font-semibold leading-none tracking-tight">{getPageTitle()}</h1>
             </div>
-          </div>
-
-          {/* Right side - User avatar with dropdown */}
-          <div className="flex items-center">
-            {user && (
-              <div className="relative user-menu">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="h-8 w-8 p-0 rounded-full"
-                >
-                  {user.imageUrl ? (
-                    <img 
-                      src={user.imageUrl} 
-                      alt={user.fullName || 'User'} 
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <UserIcon className="h-4 w-4 text-primary" />
-                  )}
-                </Button>
-                
-                {/* Mobile User Dropdown */}
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
-                    <div className="py-2">
-                      <Link href="/dashboard/profile">
-                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
-                          <UserIcon className="h-4 w-4" />
-                          <span className="text-sm">Profile</span>
-                        </div>
-                      </Link>
-                      <SignOutButton>
-                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
-                          <LogOutIcon className="h-4 w-4" />
-                          <span className="text-sm">Sign Out</span>
-                        </div>
-                      </SignOutButton>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Header - Full width across top */}
-      <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-6 py-3 w-full">
-          {/* Left side - Sidebar trigger and Logo */}
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex">
-              <SidebarTrigger />
-            </div>
-            <div className="flex items-center gap-3">
-              <Image
-                src="/SparksStackLogo.png"
-                alt="Sparks Stack"
-                width={32}
-                height={32}
-                className="w-8 h-8 object-contain"
-              />
-              <span className="text-lg font-semibold">Sparks Stack</span>
-            </div>
-          </div>
-
-          {/* Right side - User avatar with dropdown */}
-          <div className="flex items-center">
-            {user && (
-              <div className="relative user-menu">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="h-9 px-3 py-2 flex items-center gap-2 hover:bg-muted"
-                >
-                  {user.imageUrl ? (
-                    <img 
-                      src={user.imageUrl} 
-                      alt={user.fullName || 'User'} 
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <UserIcon className="h-4 w-4 text-primary" />
+            <div className="ml-auto flex items-center">
+              {user && (
+                <div className="relative user-menu">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="h-9 px-3 py-2 flex items-center gap-2 hover:bg-muted"
+                  >
+                    {user.imageUrl ? (
+                      <img 
+                        src={user.imageUrl} 
+                        alt={user.fullName || 'User'} 
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <UserIcon className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">
+                      {user.fullName || user.username || 'User'}
+                    </span>
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </Button>
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                      <div className="py-2">
+                        <Link href="/dashboard/profile">
+                          <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
+                            <UserIcon className="h-4 w-4" />
+                            <span className="text-sm">Profile</span>
+                          </div>
+                        </Link>
+                        <SignOutButton>
+                          <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
+                            <LogOutIcon className="h-4 w-4" />
+                            <span className="text-sm">Sign Out</span>
+                          </div>
+                        </SignOutButton>
+                      </div>
                     </div>
                   )}
-                  <span className="text-sm font-medium">
-                    {user.fullName || user.username || 'User'}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4" />
-                </Button>
-                
-                {/* Desktop User Dropdown */}
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
-                    <div className="py-2">
-                      <Link href="/dashboard/profile">
-                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer">
-                          <UserIcon className="h-4 w-4" />
-                          <span className="text-sm">Profile</span>
-                        </div>
-                      </Link>
-                      <SignOutButton>
-                        <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted cursor-pointer text-red-600 hover:text-red-700">
-                          <LogOutIcon className="h-4 w-4" />
-                          <span className="text-sm">Sign Out</span>
-                        </div>
-                      </SignOutButton>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Shadcn Sidebar (mobile offcanvas + desktop sidebar) */}
       <AppSidebar />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto w-full">
-        {/* Mobile Header Spacer */}
-        <div className="lg:hidden h-20" />
-        {/* Desktop Header Spacer */}
-        <div className="hidden lg:block h-16" />
-        {children}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto w-full p-4 md:p-6">
+          {children}
+        </main>
+      </SidebarInset>
     </div>
     </SidebarProvider>
   );

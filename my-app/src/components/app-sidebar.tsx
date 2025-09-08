@@ -38,7 +38,7 @@ export function AppSidebar(props: React.ComponentProps<typeof UiSidebar>) {
   const { isMobile, setOpenMobile } = useSidebar();
 
   return (
-    <UiSidebar collapsible="offcanvas" {...props}>
+    <UiSidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <Image
