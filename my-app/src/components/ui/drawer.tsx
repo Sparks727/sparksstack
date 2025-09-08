@@ -2,8 +2,8 @@
 
 import * as React from "react"
 
-export function Drawer({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+export function Drawer({ children, direction }: { children: React.ReactNode; direction?: string }) {
+  return <div data-direction={direction}>{children}</div>
 }
 
 export function DrawerContent({ children }: { children: React.ReactNode }) {
@@ -14,8 +14,8 @@ export function DrawerFooter({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>
 }
 
-export function DrawerHeader({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+export function DrawerHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
 }
 
 export function DrawerTitle({ children }: { children: React.ReactNode }) {
