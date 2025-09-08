@@ -46,14 +46,14 @@ export function SidebarMenu({ children }: { children: React.ReactNode }) {
   return <ul className="sidebar-menu">{children}</ul>
 }
 
-export function SidebarMenuItem({ children }: { children: React.ReactNode }) {
-  return <li className="sidebar-menu-item">{children}</li>
+export function SidebarMenuItem({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <li className={className ?? "sidebar-menu-item"}>{children}</li>
 }
 
-export function SidebarMenuButton({ children, asChild, className, size }: { children: React.ReactNode; asChild?: boolean; className?: string; size?: string }) {
+export function SidebarMenuButton({ children, asChild, className, size, tooltip }: { children: React.ReactNode; asChild?: boolean; className?: string; size?: string; tooltip?: string }) {
   if (asChild) return <>{children}</>
   return (
-    <button className={className} data-size={size}>
+    <button className={className} data-size={size} title={tooltip}>
       {children}
     </button>
   )
