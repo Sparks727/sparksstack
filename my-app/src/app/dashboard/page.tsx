@@ -1,45 +1,19 @@
-"use client";
-
-import { useUser } from '@clerk/nextjs';
-import Image from 'next/image';
+import { SectionCards } from "@/components/section-cards";
 
 export default function DashboardPage() {
-  const { user } = useUser();
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="text-center space-y-6 sm:space-y-8 w-full max-w-md mx-auto">
-        {/* Sparks Stack Logo */}
-        <div className="flex justify-center">
-          <Image
-            src="/SparksStackLogo.png"
-            alt="Sparks Stack Logo"
-            width={200}
-            height={200}
-            className="w-32 h-32 sm:w-48 sm:h-48 object-contain"
-            priority
-          />
-        </div>
-        
-        {/* Dashboard Coming Soon Message */}
-        <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground leading-tight">
-            Dashboard Coming Soon!
-          </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-sm sm:max-w-md mx-auto leading-relaxed">
-            We're working hard to build something amazing for you. Stay tuned!
-          </p>
-        </div>
-        
-        {/* User Info (Optional) */}
-        {user && (
-          <div className="pt-6 sm:pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              Welcome back, {user.firstName || user.username || 'User'}!
-            </p>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          <SectionCards />
+          <div className="px-4 lg:px-6">
+            <div className="bg-muted/50 aspect-video rounded-xl" />
           </div>
-        )}
+          <div className="px-4 lg:px-6">
+            <div className="bg-muted/50 min-h-[40vh] rounded-xl" />
+          </div>
+        </div>
       </div>
     </div>
   );
-} 
+}
