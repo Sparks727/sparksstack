@@ -160,7 +160,9 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
         </div>
         <NavMain items={data.navMain} />
         <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <div className="mt-auto">
+          <NavSecondary items={data.navSecondary} />
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-2">
