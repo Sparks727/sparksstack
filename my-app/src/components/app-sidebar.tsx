@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
-import { BuildingIcon, HomeIcon, UserIcon } from "lucide-react";
+import { BuildingIcon, HomeIcon, UserIcon, BookOpenIcon } from "lucide-react";
 
 type NavItem = {
   title: string;
@@ -25,6 +25,7 @@ type NavItem = {
 };
 
 const items: NavItem[] = [
+  { title: "Get Started", href: "/dashboard/get-started", icon: BookOpenIcon },
   { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
   { title: "Organizations", href: "/dashboard/organizations", icon: BuildingIcon },
   { title: "Profile", href: "/dashboard/profile", icon: UserIcon },
