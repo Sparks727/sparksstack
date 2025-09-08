@@ -1,90 +1,170 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React from "react";
+import * as React from "react"
 import {
-  Sidebar as UiSidebar,
+  IconCamera,
+  IconChartBar,
+  IconDashboard,
+  IconDatabase,
+  IconFileAi,
+  IconFileDescription,
+  IconFileWord,
+  IconFolder,
+  IconHelp,
+  IconInnerShadowTop,
+  IconListDetails,
+  IconReport,
+  IconSearch,
+  IconSettings,
+  IconUsers,
+} from "@tabler/icons-react"
+
+import { NavDocuments } from "@/components/nav-documents"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+// import { NavUser } from "@/components/nav-user"
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
+import {
+  Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import Image from "next/image";
-import { BuildingIcon, HomeIcon, UserIcon, BookOpenIcon } from "lucide-react";
+} from "@/components/ui/sidebar"
 
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-const items: NavItem[] = [
-  { title: "Get Started", href: "/dashboard/get-started", icon: BookOpenIcon },
-  { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
-  { title: "Organizations", href: "/dashboard/organizations", icon: BuildingIcon },
-  { title: "Profile", href: "/dashboard/profile", icon: UserIcon },
-];
-
-import { useSidebar } from "@/components/ui/sidebar";
-
-export function AppSidebar(props: React.ComponentProps<typeof UiSidebar>) {
-  const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
-
-  return (
-    <UiSidebar variant="inset" collapsible="icon" {...props}>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <Image
-            src="/SparksStackLogo.png"
-            alt="Sparks Stack"
-            width={24}
-            height={24}
-            className="h-6 w-6 object-contain"
-          />
-          <span className="text-sm font-semibold">Sparks Stack</span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link
-                        href={item.href}
-                        onClick={() => {
-                          if (isMobile) {
-                            // Close the mobile sheet after navigation
-                            // Delay to allow navigation to start
-                            setTimeout(() => setOpenMobile(false), 0);
-                          }
-                        }}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter />
-    </UiSidebar>
-  );
+const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  navMain: [
+    { title: "Get Started", url: "/dashboard/get-started", icon: IconFileDescription },
+    { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+    { title: "Organizations", url: "/dashboard/organizations", icon: IconUsers },
+    { title: "Profile", url: "/dashboard/profile", icon: IconUsers },
+  ],
+  navClouds: [
+    {
+      title: "Capture",
+      icon: IconCamera,
+      isActive: true,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Proposal",
+      icon: IconFileDescription,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Prompts",
+      icon: IconFileAi,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
+    },
+  ],
+  navSecondary: [
+    {
+      title: "Settings",
+      url: "#",
+      icon: IconSettings,
+    },
+    {
+      title: "Get Help",
+      url: "#",
+      icon: IconHelp,
+    },
+    {
+      title: "Search",
+      url: "#",
+      icon: IconSearch,
+    },
+  ],
+  documents: [
+    {
+      name: "Data Library",
+      url: "#",
+      icon: IconDatabase,
+    },
+    {
+      name: "Reports",
+      url: "#",
+      icon: IconReport,
+    },
+    {
+      name: "Word Assistant",
+      url: "#",
+      icon: IconFileWord,
+    },
+  ],
 }
 
-
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  return (
+    <Sidebar collapsible="offcanvas" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="#">
+                <IconInnerShadowTop className="!size-5" />
+                <span className="text-base font-semibold">Acme Inc.</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <div className="px-2 py-2">
+          <OrganizationSwitcher
+            afterCreateOrganizationUrl="/dashboard"
+            afterLeaveOrganizationUrl="/dashboard"
+            afterSelectOrganizationUrl="/dashboard"
+          />
+        </div>
+        <NavMain items={data.navMain} />
+        <NavDocuments items={data.documents} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" />
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="px-2 py-2">
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
