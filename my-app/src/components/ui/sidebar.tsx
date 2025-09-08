@@ -63,7 +63,7 @@ export function SidebarMenuButton({ children, asChild, className, size }: { chil
 export function SidebarGroup({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
 export function SidebarGroupLabel({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
 export function SidebarGroupContent({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
-export function SidebarMenuAction({ children }: { children: React.ReactNode }) { return <button>{children}</button> }
+export function SidebarMenuAction({ children, className, showOnHover }: { children: React.ReactNode; className?: string; showOnHover?: boolean }) { return <button className={className} data-show-on-hover={showOnHover}>{children}</button> }
 
 export function SidebarInset({ children }: { children: React.ReactNode }) {
   return <main className="sidebar-inset">{children}</main>
