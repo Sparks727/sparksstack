@@ -20,7 +20,7 @@ export function NavSecondary({
     url: string
     icon: Icon
   }[]
-} & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+} & Omit<React.ComponentPropsWithoutRef<typeof SidebarGroup>, 'children'>) {
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
