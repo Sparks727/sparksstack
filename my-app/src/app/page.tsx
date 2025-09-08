@@ -10,7 +10,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
+      <div className="max-w-4xl w-full min-h-[600px]">
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20">
@@ -30,7 +30,7 @@ export default function Home() {
         </div>
 
         <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 min-h-[400px]">
             <div className="flex justify-center">
               <SignIn 
                 appearance={{
@@ -50,7 +50,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-12 min-h-[60px] flex items-center justify-center">
           <p className="text-gray-500 text-sm">
             By signing in or creating an account, you agree to our{" "}
             <button

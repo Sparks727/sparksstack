@@ -56,9 +56,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Experimental features for better security
+  // Experimental features for better security and performance
   experimental: {
     serverComponentsExternalPackages: [],
+    // Enable back/forward cache optimization
+    optimizeCss: true,
+  },
+  // Performance optimizations
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 };
 
