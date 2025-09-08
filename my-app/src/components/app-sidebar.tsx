@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import {
   IconDashboard,
 } from "@tabler/icons-react"
@@ -14,17 +13,9 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
   ],
-  navClouds: [],
-  navSecondary: [],
-  documents: [],
 }
 
 type AppSidebarProps = Omit<React.ComponentProps<typeof Sidebar>, 'children'> & { variant?: string }

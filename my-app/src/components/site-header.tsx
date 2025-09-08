@@ -1,6 +1,3 @@
-// Replacing custom UI deps to avoid missing modules
-// import { Button } from "@/components/ui/button"
-// import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 
