@@ -21,6 +21,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 const data = {
@@ -56,6 +57,14 @@ const data = {
 type AppSidebarProps = Omit<React.ComponentProps<typeof Sidebar>, 'children'> & { variant?: string }
 
 export function AppSidebar({ variant, ...props }: AppSidebarProps) {
+  const { isMobile, setIsOpen } = useSidebar()
+
+  const handleLogoClick = () => {
+    if (isMobile) {
+      setIsOpen(false)
+    }
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -65,7 +74,7 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/dashboard" className="flex items-center gap-2">
+              <a href="/dashboard" className="flex items-center gap-2" onClick={handleLogoClick}>
                 <Image 
                   src="/SparksStackLogo.png" 
                   alt="SparksStack Logo" 
@@ -87,9 +96,7 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-2">
-          <div className="text-xs text-muted-foreground">
-            © 2024 SparksStack
-          </div>
+          {/* Footer content removed */}
         </div>
       </SidebarFooter>
     </Sidebar>
