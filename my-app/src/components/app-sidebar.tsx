@@ -7,15 +7,12 @@ import {
   IconInnerShadowTop,
   IconSearch,
   IconSettings,
-  IconUsers,
-  IconUserCircle,
 } from "@tabler/icons-react"
 
 // import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 // import { NavUser } from "@/components/nav-user"
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 import {
   Sidebar,
   SidebarContent,
@@ -34,8 +31,6 @@ const data = {
   },
   navMain: [
     { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-    { title: "Organizations", url: "/dashboard/organizations", icon: IconUsers },
-    { title: "Profile", url: "/dashboard/profile", icon: IconUserCircle },
   ],
   navClouds: [],
   navSecondary: [
@@ -70,22 +65,15 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <a href="/dashboard">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-base font-semibold">SparksStack</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <div className="px-2 py-2">
-          <OrganizationSwitcher
-            afterCreateOrganizationUrl="/dashboard"
-            afterLeaveOrganizationUrl="/dashboard"
-            afterSelectOrganizationUrl="/dashboard"
-          />
-        </div>
         <NavMain items={data.navMain} />
         <div className="mt-auto">
           <NavSecondary items={data.navSecondary} />
@@ -93,7 +81,9 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-2">
-          <UserButton afterSignOutUrl="/" />
+          <div className="text-xs text-muted-foreground">
+            © 2024 SparksStack
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

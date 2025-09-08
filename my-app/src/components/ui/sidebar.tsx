@@ -4,14 +4,44 @@ import * as React from "react"
 
 type SidebarContextValue = {
   isMobile: boolean
+  isOpen: boolean
+  setIsOpen: (open: boolean) => void
+  toggleSidebar: () => void
 }
 
-const SidebarContext = React.createContext<SidebarContextValue>({ isMobile: false })
+const SidebarContext = React.createContext<SidebarContextValue>({ 
+  isMobile: false, 
+  isOpen: true, 
+  setIsOpen: () => {}, 
+  toggleSidebar: () => {} 
+})
 
 export function SidebarProvider({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  const [isOpen, setIsOpen] = React.useState(true)
+  const [isMobile, setIsMobile] = React.useState(false)
+
+  const toggleSidebar = React.useCallback(() => {
+    setIsOpen(prev => !prev)
+  }, [])
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
-    <SidebarContext.Provider value={{ isMobile: false }}>
-      <div style={style} data-collapsible="expanded" className="group/sidebar-wrapper flex min-h-svh w-full has-data-[collapsible=icon]:sidebar-icon">
+    <SidebarContext.Provider value={{ isMobile, isOpen, setIsOpen, toggleSidebar }}>
+      <div 
+        style={style} 
+        data-collapsible="expanded" 
+        data-state={isOpen ? "open" : "closed"}
+        className="group/sidebar-wrapper flex min-h-svh w-full has-data-[collapsible=icon]:sidebar-icon"
+      >
         {children}
       </div>
     </SidebarContext.Provider>
@@ -23,10 +53,31 @@ export function useSidebar() {
 }
 
 export function Sidebar({ children, collapsible }: { children: React.ReactNode; collapsible?: string }) {
+  const { isOpen, isMobile, setIsOpen } = useSidebar()
+  
   return (
-    <aside data-collapsible={collapsible} className="group/sidebar peer hidden w-0 shrink-0 transition-[width] duration-300 ease-linear group-data-[collapsible=offcanvas]:fixed group-data-[collapsible=offcanvas]:inset-y-0 group-data-[collapsible=offcanvas]:z-50 group-data-[collapsible=offcanvas]:w-72 group-data-[collapsible=offcanvas]:border-r group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:shadow-lg group-data-[collapsible=offcanvas]:will-change-transform group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:duration-300 group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:ease-linear group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:[&:not([data-state=open])]:-translate-x-full group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:[&:not([data-state=open])]:will-change-transform group-data-[collapsible=offcanvas]:peer-data-[collapsible=offcanvas]:[&:not([data-state=open])]:[transform:translate3d(-100%,0,0)] has-data-[collapsible=icon]:w-16 lg:flex lg:w-72 lg:border-r lg:bg-sidebar lg:shadow-lg">
-      {children}
-    </aside>
+    <>
+      {/* Mobile overlay */}
+      {isMobile && isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+      <aside 
+        data-collapsible={collapsible} 
+        data-state={isOpen ? "open" : "closed"}
+        className={`group/sidebar peer shrink-0 transition-[width] duration-300 ease-linear ${
+          isMobile 
+            ? `fixed inset-y-0 z-50 w-72 border-r bg-sidebar shadow-lg will-change-transform ${
+                isOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `hidden w-0 ${isOpen ? 'lg:flex lg:w-72 lg:border-r lg:bg-sidebar lg:shadow-lg' : ''}`
+        }`}
+      >
+        {children}
+      </aside>
+    </>
   )
 }
 
@@ -70,7 +121,17 @@ export function SidebarInset({ children }: { children: React.ReactNode }) {
 }
 
 export function SidebarTrigger({ className }: { className?: string }) {
-  return <button className={`inline-flex items-center justify-center rounded-md text-sm font-medium outline-none ring-sidebar-ring transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 ${className ?? ""}`} aria-label="Toggle sidebar">☰</button>
+  const { toggleSidebar } = useSidebar()
+  
+  return (
+    <button 
+      onClick={toggleSidebar}
+      className={`inline-flex items-center justify-center rounded-md text-sm font-medium outline-none ring-sidebar-ring transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 ${className ?? ""}`} 
+      aria-label="Toggle sidebar"
+    >
+      ☰
+    </button>
+  )
 }
 
 
