@@ -151,8 +151,11 @@ export default function DashboardLayout({
       {/* Desktop Header - Full width across top */}
       <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-3 w-full">
-          {/* Left side - Sparks Stack Logo, Name, and Navigation */}
+          {/* Left side - Sidebar trigger, Logo, and Navigation */}
           <div className="flex items-center gap-6">
+            <div className="hidden md:flex">
+              <SidebarTrigger />
+            </div>
             <div className="flex items-center gap-3">
               <Image
                 src="/SparksStackLogo.png"
@@ -236,8 +239,8 @@ export default function DashboardLayout({
         </div>
       </div>
 
-      {/* Shadcn Sidebar (mobile offcanvas) */}
-      <AppSidebar className="md:hidden" />
+      {/* Shadcn Sidebar (mobile offcanvas + desktop sidebar) */}
+      <AppSidebar />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto w-full">
