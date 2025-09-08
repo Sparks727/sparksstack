@@ -52,4 +52,12 @@ export function CardContent({ className, children, ...props }: DivProps) {
   )
 }
 
+export function CardFooter({ className, children, ...props }: DivProps) {
+  return (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  )
+}
+
 
