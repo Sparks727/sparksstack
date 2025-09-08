@@ -3,24 +3,13 @@
 import * as React from "react"
 import {
   IconDashboard,
-  IconHelp,
-  IconSearch,
-  IconSettings,
 } from "@tabler/icons-react"
 import Image from "next/image"
 
-// import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-// import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -34,23 +23,7 @@ const data = {
     { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
   ],
   navClouds: [],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
+  navSecondary: [],
   documents: [],
 }
 
@@ -67,38 +40,28 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="/dashboard" className="flex items-center gap-2" onClick={handleLogoClick}>
-                <Image 
-                  src="/SparksStackLogo.png" 
-                  alt="SparksStack Logo" 
-                  width={24} 
-                  height={24}
-                  className="!size-6"
-                />
-                <span className="text-base font-semibold">SparksStack</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <div className="mt-auto">
-          <NavSecondary items={data.navSecondary} />
+        <div className="flex flex-col h-full">
+          {/* Logo/Brand Section */}
+          <div className="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-6">
+            <a href="/dashboard" className="flex items-center gap-2" onClick={handleLogoClick}>
+              <Image 
+                src="/SparksStackLogo.png" 
+                alt="SparksStack Logo" 
+                width={24} 
+                height={24}
+                className="!size-6"
+              />
+              <span className="text-base font-semibold">SparksStack</span>
+            </a>
+          </div>
+          
+          {/* Navigation Section */}
+          <div className="flex-1 overflow-auto">
+            <NavMain items={data.navMain} />
+          </div>
         </div>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="px-2 py-2">
-          {/* Footer content removed */}
-        </div>
-      </SidebarFooter>
     </Sidebar>
   )
 }
