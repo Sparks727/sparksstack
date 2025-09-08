@@ -151,7 +151,7 @@ export default function DashboardLayout({
       {/* Desktop Header - Full width across top */}
       <div className="hidden lg:flex fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-3 w-full">
-          {/* Left side - Sidebar trigger, Logo, and Navigation */}
+          {/* Left side - Sidebar trigger and Logo */}
           <div className="flex items-center gap-6">
             <div className="hidden md:flex">
               <SidebarTrigger />
@@ -166,25 +166,6 @@ export default function DashboardLayout({
               />
               <span className="text-lg font-semibold">Sparks Stack</span>
             </div>
-            
-            {/* Desktop Navigation */}
-            <nav className="flex items-center gap-1">
-              {navigation.map((item) => {
-                const isItemActive = isActive(item.href);
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isItemActive ? "secondary" : "ghost"}
-                      size="sm"
-                      className="h-8 px-3"
-                    >
-                      <item.icon className="h-4 w-4 mr-2" />
-                      {item.title}
-                    </Button>
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
 
           {/* Right side - User avatar with dropdown */}

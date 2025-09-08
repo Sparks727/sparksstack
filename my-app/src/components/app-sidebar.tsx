@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from "react";
 import {
   Sidebar as UiSidebar,
   SidebarContent,
@@ -29,8 +30,11 @@ const items: NavItem[] = [
   { title: "Profile", href: "/dashboard/profile", icon: UserIcon },
 ];
 
+import { useSidebar } from "@/components/ui/sidebar";
+
 export function AppSidebar(props: React.ComponentProps<typeof UiSidebar>) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   return (
     <UiSidebar collapsible="offcanvas" {...props}>
@@ -56,7 +60,16 @@ export function AppSidebar(props: React.ComponentProps<typeof UiSidebar>) {
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton asChild isActive={isActive}>
-                      <Link href={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => {
+                          if (isMobile) {
+                            // Close the mobile sheet after navigation
+                            // Delay to allow navigation to start
+                            setTimeout(() => setOpenMobile(false), 0);
+                          }
+                        }}
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
