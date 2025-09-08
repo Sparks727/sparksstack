@@ -1,4 +1,4 @@
-import { SignIn, SignUp } from "@clerk/nextjs"
+import { SignIn } from "@clerk/nextjs"
 import Image from "next/image"
 
 export default function Home() {
@@ -20,12 +20,8 @@ export default function Home() {
           </h1>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Sign In Section */}
+        <div className="max-w-md mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-              Sign In
-            </h2>
             <div className="flex justify-center">
               <SignIn 
                 appearance={{
@@ -39,32 +35,7 @@ export default function Home() {
                     footerActionLink: "text-blue-600 hover:text-blue-700"
                   }
                 }}
-                redirectUrl="/dashboard"
                 signUpUrl="/"
-              />
-            </div>
-          </div>
-
-          {/* Sign Up Section */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-              Create Account
-            </h2>
-            <div className="flex justify-center">
-              <SignUp 
-                appearance={{
-                  elements: {
-                    formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
-                    card: "shadow-none",
-                    headerTitle: "hidden",
-                    headerSubtitle: "hidden",
-                    socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
-                    formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
-                    footerActionLink: "text-blue-600 hover:text-blue-700"
-                  }
-                }}
-                redirectUrl="/dashboard"
-                signInUrl="/"
               />
             </div>
           </div>

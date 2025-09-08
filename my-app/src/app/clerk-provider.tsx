@@ -11,6 +11,9 @@ export function ClerkClientProvider({
   return (
     <ClerkProvider
       signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
     >
       {children}
     </ClerkProvider>
