@@ -60,8 +60,8 @@ export function SidebarMenuButton({ children, asChild, className, size }: { chil
 }
 
 // Extra shims used by nav components
-export function SidebarGroup({ children }: { children: React.ReactNode }) { return <div>{children}</div> }
-export function SidebarGroupLabel({ children }: { children: React.ReactNode }) { return <div>{children}</div> }
+export function SidebarGroup({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
+export function SidebarGroupLabel({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
 export function SidebarGroupContent({ children, className }: { children: React.ReactNode; className?: string }) { return <div className={className}>{children}</div> }
 export function SidebarMenuAction({ children }: { children: React.ReactNode }) { return <button>{children}</button> }
 
