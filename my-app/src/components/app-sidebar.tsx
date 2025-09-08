@@ -4,10 +4,10 @@ import * as React from "react"
 import {
   IconDashboard,
   IconHelp,
-  IconInnerShadowTop,
   IconSearch,
   IconSettings,
 } from "@tabler/icons-react"
+import Image from "next/image"
 
 // import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -65,8 +65,14 @@ export function AppSidebar({ variant, ...props }: AppSidebarProps) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
+              <a href="/dashboard" className="flex items-center gap-2">
+                <Image 
+                  src="/SparksStackLogo.png" 
+                  alt="SparksStack Logo" 
+                  width={24} 
+                  height={24}
+                  className="!size-6"
+                />
                 <span className="text-base font-semibold">SparksStack</span>
               </a>
             </SidebarMenuButton>
