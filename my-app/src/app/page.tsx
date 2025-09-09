@@ -55,8 +55,8 @@ export default function Home() {
                 footerActionLink: "text-blue-600 hover:text-blue-700"
               }
             }}
-            signUpUrl="/sign-up"
             afterSignInUrl="/dashboard"
+            afterSignUpUrl="/dashboard"
           />
         </Suspense>
       </div>
