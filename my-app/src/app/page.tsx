@@ -1,12 +1,25 @@
 "use client"
 
-import { SignIn } from "@clerk/nextjs"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, Suspense, lazy } from "react"
+import { useClerkPreload } from "@/hooks/use-clerk-preload"
+
+// Lazy load the SignIn and SignUp components to reduce initial bundle size
+const LazySignIn = lazy(() => 
+  import("@clerk/nextjs").then(module => ({ default: module.SignIn }))
+)
+
+const LazySignUp = lazy(() => 
+  import("@clerk/nextjs").then(module => ({ default: module.SignUp }))
+)
 
 export default function Home() {
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
+  const [isSignUpMode, setIsSignUpMode] = useState(false)
+  
+  // Use custom hook for optimized Clerk preloading
+  const { isPreloaded, shouldShowLoading, error } = useClerkPreload()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -31,21 +44,93 @@ export default function Home() {
 
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8 min-h-[400px]">
+            {/* Toggle between Sign In and Sign Up */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-gray-100 rounded-lg p-1 flex">
+                <button
+                  onClick={() => setIsSignUpMode(false)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    !isSignUpMode
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setIsSignUpMode(true)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isSignUpMode
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            </div>
             <div className="flex justify-center">
-              <SignIn 
-                appearance={{
-                  elements: {
-                    formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
-                    card: "shadow-none",
-                    headerTitle: "hidden",
-                    headerSubtitle: "hidden",
-                    socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
-                    formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
-                    footerActionLink: "text-blue-600 hover:text-blue-700"
-                  }
-                }}
-                signUpUrl="/"
-              />
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center min-h-[300px] space-y-4">
+                  {shouldShowLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="text-gray-500 text-sm">Loading {isSignUpMode ? 'sign-up' : 'sign-in'} form...</p>
+                    </>
+                  ) : error ? (
+                    <div className="text-center space-y-2">
+                      <p className="text-red-500 text-sm">Failed to load {isSignUpMode ? 'sign-up' : 'sign-in'} form</p>
+                      <button 
+                        onClick={() => window.location.reload()} 
+                        className="text-blue-600 hover:text-blue-700 text-sm underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="animate-pulse space-y-4 w-full">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                      <div className="h-10 bg-gray-200 rounded"></div>
+                      <div className="h-10 bg-gray-200 rounded"></div>
+                      <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                    </div>
+                  )}
+                </div>
+              }>
+                {isSignUpMode ? (
+                  <LazySignUp 
+                    appearance={{
+                      elements: {
+                        formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
+                        card: "shadow-none",
+                        headerTitle: "hidden",
+                        headerSubtitle: "hidden",
+                        socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
+                        formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
+                        footerActionLink: "text-blue-600 hover:text-blue-700"
+                      }
+                    }}
+                    signInUrl="/"
+                    afterSignUpUrl="/dashboard"
+                  />
+                ) : (
+                  <LazySignIn 
+                    appearance={{
+                      elements: {
+                        formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
+                        card: "shadow-none",
+                        headerTitle: "hidden",
+                        headerSubtitle: "hidden",
+                        socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
+                        formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
+                        footerActionLink: "text-blue-600 hover:text-blue-700"
+                      }
+                    }}
+                    signUpUrl="/"
+                    afterSignInUrl="/dashboard"
+                  />
+                )}
+              </Suspense>
             </div>
           </div>
         </div>
