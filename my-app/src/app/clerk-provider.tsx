@@ -14,9 +14,6 @@ export function ClerkClientProvider({
       signUpFallbackRedirectUrl="/dashboard"
       afterSignInUrl="/dashboard"
       afterSignUpUrl="/dashboard"
-      // Force embedded components instead of hosted pages
-      signInUrl="/"
-      signUpUrl="/"
       // Performance optimizations
       appearance={{
         // Preload common styles to reduce layout shift
