@@ -8,7 +8,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1F1F23' }}>
       <div className="text-center">
         {/* SparksStack Logo */}
         <div className="flex justify-center mb-12">
@@ -25,18 +25,25 @@ export default function Home() {
         </div>
 
         {/* Welcome Message */}
-        <h1 className="text-5xl font-bold text-gray-900 mb-8">
-          Welcome to SparksStack
+        <h1 className="text-5xl font-bold text-white mb-8">
+          Welcome to Sparks Stack
         </h1>
         
-        <p className="text-xl text-gray-600 mb-12 max-w-md mx-auto">
+        <p className="text-xl text-white mb-12 max-w-md mx-auto">
           Your journey to success starts here
         </p>
 
         {/* Onward Button */}
         <button
           onClick={handleOnwardClick}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-12 rounded-lg text-lg transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          className="text-white font-semibold py-4 px-12 rounded-lg text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          style={{ backgroundColor: '#7452FE' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#6B46F5'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#7452FE'
+          }}
         >
           Onward
         </button>

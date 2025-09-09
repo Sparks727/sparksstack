@@ -3,7 +3,7 @@ import { ClerkClientProvider } from "./clerk-provider"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "SparksStack",
+  title: "Sparks Stack",
   description: "Dashboard",
 }
 
