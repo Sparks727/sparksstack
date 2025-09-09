@@ -4,19 +4,14 @@ import Image from "next/image"
 import { useState, Suspense, lazy } from "react"
 import { useClerkPreload } from "@/hooks/use-clerk-preload"
 
-// Lazy load the SignIn and SignUp components to reduce initial bundle size
+// Lazy load the SignIn component to reduce initial bundle size
 const LazySignIn = lazy(() => 
   import("@clerk/nextjs").then(module => ({ default: module.SignIn }))
-)
-
-const LazySignUp = lazy(() => 
-  import("@clerk/nextjs").then(module => ({ default: module.SignUp }))
 )
 
 export default function Home() {
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
-  const [isSignUpMode, setIsSignUpMode] = useState(false)
   
   // Use custom hook for optimized Clerk preloading
   const { isPreloaded, shouldShowLoading, error } = useClerkPreload()
@@ -44,42 +39,17 @@ export default function Home() {
 
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8 min-h-[400px]">
-            {/* Toggle between Sign In and Sign Up */}
-            <div className="flex justify-center mb-6">
-              <div className="bg-gray-100 rounded-lg p-1 flex">
-                <button
-                  onClick={() => setIsSignUpMode(false)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    !isSignUpMode
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setIsSignUpMode(true)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isSignUpMode
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Sign Up
-                </button>
-              </div>
-            </div>
             <div className="flex justify-center">
               <Suspense fallback={
                 <div className="flex flex-col items-center justify-center min-h-[300px] space-y-4">
                   {shouldShowLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <p className="text-gray-500 text-sm">Loading {isSignUpMode ? 'sign-up' : 'sign-in'} form...</p>
+                      <p className="text-gray-500 text-sm">Loading sign-in form...</p>
                     </>
                   ) : error ? (
                     <div className="text-center space-y-2">
-                      <p className="text-red-500 text-sm">Failed to load {isSignUpMode ? 'sign-up' : 'sign-in'} form</p>
+                      <p className="text-red-500 text-sm">Failed to load sign-in form</p>
                       <button 
                         onClick={() => window.location.reload()} 
                         className="text-blue-600 hover:text-blue-700 text-sm underline"
@@ -97,39 +67,21 @@ export default function Home() {
                   )}
                 </div>
               }>
-                {isSignUpMode ? (
-                  <LazySignUp 
-                    appearance={{
-                      elements: {
-                        formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
-                        card: "shadow-none",
-                        headerTitle: "hidden",
-                        headerSubtitle: "hidden",
-                        socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
-                        formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
-                        footerActionLink: "text-blue-600 hover:text-blue-700"
-                      }
-                    }}
-                    signInUrl="/"
-                    afterSignUpUrl="/dashboard"
-                  />
-                ) : (
-                  <LazySignIn 
-                    appearance={{
-                      elements: {
-                        formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
-                        card: "shadow-none",
-                        headerTitle: "hidden",
-                        headerSubtitle: "hidden",
-                        socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
-                        formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
-                        footerActionLink: "text-blue-600 hover:text-blue-700"
-                      }
-                    }}
-                    signUpUrl="/"
-                    afterSignInUrl="/dashboard"
-                  />
-                )}
+                <LazySignIn 
+                  appearance={{
+                    elements: {
+                      formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-sm normal-case",
+                      card: "shadow-none",
+                      headerTitle: "hidden",
+                      headerSubtitle: "hidden",
+                      socialButtonsBlockButton: "bg-white border-gray-300 hover:bg-gray-50 text-gray-700",
+                      formFieldInput: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
+                      footerActionLink: "text-blue-600 hover:text-blue-700"
+                    }
+                  }}
+                  signUpUrl="/sign-up"
+                  afterSignInUrl="/dashboard"
+                />
               </Suspense>
             </div>
           </div>
